@@ -1,0 +1,5 @@
+org.springframework.boot.SpringApplicationRunListener=\
+  cmc.mybatisc.CoreApplicationRunListener
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+ cmc.mybatisc.config.MybatisScannerConfigurer,\
+ cmc.mybatisc.config.MybatisPlusConfig
