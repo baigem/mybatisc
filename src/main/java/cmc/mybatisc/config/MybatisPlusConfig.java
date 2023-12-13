@@ -32,7 +32,6 @@ public class MybatisPlusConfig {
         interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
         // 防全表更新与删除
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
-
         return interceptor;
     }
 

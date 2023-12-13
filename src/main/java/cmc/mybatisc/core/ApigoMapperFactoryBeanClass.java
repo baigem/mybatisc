@@ -11,8 +11,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static cmc.mybatisc.utils.reflect.ReflectUtils.logger;
-
 @SuppressWarnings(value = {"unchecked"})
 public class ApigoMapperFactoryBeanClass<T> extends MapperFactoryBean<T> {
 
