@@ -196,6 +196,14 @@ public interface BaseFill<F, E, K, P> {
         };
     }
 
+    default <R extends F> R fill(R obj) {
+        return this.fill(Collections.singletonList(obj)).stream().findFirst().orElse(null);
+    }
+
+    default <R extends F> R fill(R obj,P p) {
+        return this.fill(Collections.singletonList(obj),p).stream().findFirst().orElse(null);
+    }
+
     /**
      * 填充
      *
@@ -208,6 +216,13 @@ public interface BaseFill<F, E, K, P> {
             return null;
         }
         return this.fill(Collections.singletonList(BeanUtil.copyProperties(obj, clazz))).stream().findFirst().orElse(null);
+    }
+
+    default <R extends F> R fill(Object obj, Class<R> clazz, P p) {
+        if (obj == null) {
+            return null;
+        }
+        return this.fill(Collections.singletonList(BeanUtil.copyProperties(obj, clazz)),p).stream().findFirst().orElse(null);
     }
 
     /**
@@ -229,8 +244,15 @@ public interface BaseFill<F, E, K, P> {
     default  <R extends F> List<R> fill(List<R> list){
         return this.fill(list, (P) null);
     }
-    <R extends F> List<R> fill(List<R> list,P parameter);
 
+    /**
+     * 核心实现
+     *
+     * @param list      列表
+     * @param parameter 参数
+     * @return {@link List}<{@link R}>
+     */
+    <R extends F> List<R> fill(List<R> list,P parameter);
 
     default Map<K, List<E>> listToListMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey) {
         return this.listToListMap(ids, get, getKey, true);
@@ -286,21 +308,5 @@ public interface BaseFill<F, E, K, P> {
             this.fill((List<? extends F>) list,p);
         }
         return list;
-    }
-
-
-
-
-    /**
-     * 类型
-     *
-     * @author 程梦城
-     * @version 1.0.0
-     * &#064;date  2023/11/28
-     */
-    static enum Type {
-        ONE,
-        TWO,
-        THREE
     }
 }
