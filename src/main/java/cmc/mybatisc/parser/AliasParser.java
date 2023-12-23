@@ -48,7 +48,8 @@ public class AliasParser {
             index = String.valueOf(Integer.parseInt(StringUtils.hasText(index) ? index : "1") + 1);
         }
         s.append(index);
-        return this.aliases.put(name, s.toString());
+        this.aliases.put(name, s.toString());
+        return s.toString();
     }
 
     /**
