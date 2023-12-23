@@ -2,19 +2,23 @@ package cmc.mybatisc.strengthen.imp;
 
 import cmc.mybatisc.annotation.FieldSelect;
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.DelFlagConfig;
+import cmc.mybatisc.config.MybatisScannerConfigurer;
 import cmc.mybatisc.model.FieldSelectDataSource;
 import cmc.mybatisc.model.ParamAnnotation;
+import cmc.mybatisc.parser.SqlParser;
 import cmc.mybatisc.strengthen.BaseStrengthen;
 import cmc.mybatisc.utils.MapperStrongUtils;
 import cmc.mybatisc.utils.SqlUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.util.StringUtils;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -36,13 +40,14 @@ public class FieldSelectHandle extends BaseStrengthen {
      */
     @Override
     public Function<Object[], Object> createdProxyMethod(Method method) {
+        SqlParser sqlParser = this.createdSql(method);
         // 创建一些映射的对象，并返回引用id
-        String id = MapperStrongUtils.create(this.sqlSession, this.mapper, method, this.createdSql(method));
+        String id = MapperStrongUtils.create(this.sqlSession, this.mapper, method, sqlParser.getSql());
         FieldSelectDataSource fieldQuery = FieldSelectDataSource.generate(method.getAnnotation(FieldSelect.class));
         fieldQuery.setMethod(method);
         fieldQuery.setId(id);
         // 判断是否需要进行key->value 处理
-        return super.generateProxyMethod(fieldQuery);
+        return super.generateProxyMethod(fieldQuery,sqlParser);
     }
 
     /**
@@ -52,15 +57,16 @@ public class FieldSelectHandle extends BaseStrengthen {
      * @return {@link String}
      */
     @Override
-    public String createdSql(Method method) {
+    public SqlParser createdSql(Method method) {
+        SqlParser sqlParser = new SqlParser();
+        Map<String, Function<?, Serializable>> dy = sqlParser.getParameters();
+        DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
         FieldSelect fieldSelect = method.getAnnotation(FieldSelect.class);
         // 表名
-        String table = MapperStrongUtils.getTableName(this.mapperParser.getTableName(), fieldSelect.table());
+        String table = MapperStrongUtils.getTableName(this.mapperParser.getEntityParser().getTableName(), fieldSelect.table());
         if (!StringUtils.hasText(table)) {
             throw new IllegalArgumentException("table name is not empty");
         }
-        // 是否逻辑删除
-        DelFlag delFlag = super.getDelFlag(fieldSelect.delFlag());
         // 名称处理器
         CodeStandardEnum codeStandardEnum = this.getCodeStandardEnum(fieldSelect.nameMode());
         // 获取入参
@@ -71,11 +77,8 @@ public class FieldSelectHandle extends BaseStrengthen {
             fieldName = "count(*)";
         }
         sql.append("<script> select ").append(fieldName).append(" from ").append(table).append(" <where> ");
-
-        if (delFlag != null) {
-            // 添加逻辑删除
-            sql.append(this.generateDeleteFlag("", " ", delFlag.fieldName, delFlag.notDeleteValue.toString(), delFlag.isDeleteTime));
-        }
+        // 添加逻辑删除
+        sql.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getEntityParser(),"",""));
 
         Parameter[] parameters = method.getParameters();
         // 排序列表
@@ -160,7 +163,8 @@ public class FieldSelectHandle extends BaseStrengthen {
                 sql.append(String.format(s, field, paramAnnotation.sortRule)).append(", ");
             }
         }
-        return sql.toString().replaceAll(" not *$| or *$| and *$|where *$|, $", "") + "</script>";
+        sqlParser.setSql(sql.toString().replaceAll(" not *$| or *$| and *$|where *$|, $", "") + "</script>");
+        return sqlParser;
     }
 
 }

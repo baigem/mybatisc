@@ -1,5 +1,7 @@
 package cmc.mybatisc.strengthen;
 
+import cmc.mybatisc.parser.SqlParser;
+
 import java.lang.reflect.Method;
 import java.util.function.Function;
 
@@ -24,5 +26,5 @@ public interface Strengthen {
      * @param method 方法
      * @return {@link String}
      */
-    String createdSql(Method method);
+    SqlParser createdSql(Method method);
 }

@@ -1,8 +1,10 @@
 package cmc.mybatisc.datafilter.core;
 
 
+import cmc.mybatisc.config.interfaces.DelFlag;
+import cmc.mybatisc.config.interfaces.TableEntity;
 import cmc.mybatisc.core.StatementHandlerReflex;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.parser.EntityParser;
 import cn.hutool.core.util.ReflectUtil;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -206,26 +208,30 @@ public class DataFilterOption {
         // 处理join连接
         LinkedHashMap<String, Join> objectObjectLinkedHashMap = new LinkedHashMap<>();
         this.dataSource.getJoin().forEach(join -> {
+            EntityParser entityParser = EntityParser.computeIfAbsent(join.table());
+            EntityParser linkTable = EntityParser.computeIfAbsent(join.linkTable());
+
             // 判断原join中是否存在需要连的表
             Join jo = new Join();
-            Table table = new Table(join.table());
+            Table table = new Table(entityParser.getTableName());
             table.setAlias(new Alias("range_" + join.table()));
             jo.setRightItem(table);
             // 有自定义的关联表就自定义，没有就默认主表
-            Table joinTable = StringUtils.hasText(join.linkTable()) ? new Table(join.linkTable()) : this.from;
+            Table joinTable = join.linkTable() != TableEntity.class ? new Table(linkTable.getTableName()) : this.from;
             // on的字段名称有就用，没有就默认关联表的字段名名称
             String field = StringUtils.hasText(join.linkField()) ? join.linkField() : join.field();
             Column left = new Column((Table) jo.getRightItem(), join.field());
             Column right = new Column(joinTable, field);
             jo.addOnExpression(new EqualsTo(left, right));
-            objectObjectLinkedHashMap.put(join.table(), jo);
+            objectObjectLinkedHashMap.put(entityParser.getTableName(), jo);
 
-            // 判断是否需要进行逻辑删除过滤
-            for (DelFlag delFlag : join.delFlag()) {
-                Column leftDel = new Column(table, delFlag.fieldName);
-                EqualsTo equalsTo = new EqualsTo(leftDel, new Column(delFlag.notDeleteValue.toString()));
-                this.whereCache = this.whereCache == null ? equalsTo : new AndExpression(equalsTo, this.whereCache);
-            }
+            // 判断是否需要进行逻辑删除过滤 后续优化先注释
+//            for (DelFlag delFlag : join.delFlag()) {
+//
+//                Column leftDel = new Column(table, delFlag.fieldName);
+//                EqualsTo equalsTo = new EqualsTo(leftDel, new Column(delFlag.notDeleteValue.toString()));
+//                this.whereCache = this.whereCache == null ? equalsTo : new AndExpression(equalsTo, this.whereCache);
+//            }
 
             // 判断是不是数据权限的表
             if (join.isDataScope()) {

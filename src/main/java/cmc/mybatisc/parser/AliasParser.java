@@ -22,15 +22,17 @@ public class AliasParser {
      */
     @Getter
     private String mainTable;
+    @Getter
+    private Class<?> mainTableClass;
 
     /**
      * 设置名称自动生产别名
      *
      * @param name 姓名
      */
-    public synchronized void set(String name) {
+    public synchronized String set(String name) {
         if (!StringUtils.hasText(name) || this.aliases.containsKey(name)) {
-            return;
+            return this.aliases.get(name);
         }
         // 获取别名
         String[] split = name.split("_");
@@ -46,7 +48,7 @@ public class AliasParser {
             index = String.valueOf(Integer.parseInt(StringUtils.hasText(index) ? index : "1") + 1);
         }
         s.append(index);
-        this.aliases.put(name, s.toString());
+        return this.aliases.put(name, s.toString());
     }
 
     /**
@@ -54,8 +56,9 @@ public class AliasParser {
      *
      * @param name 姓名
      */
-    public void setMainTable(String name) {
+    public void setMainTable(Class<?> clazz,String name) {
         this.mainTable = name;
+        this.mainTableClass = clazz;
         this.set(name);
     }
 

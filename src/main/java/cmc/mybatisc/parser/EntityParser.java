@@ -3,10 +3,13 @@ package cmc.mybatisc.parser;
 import cmc.mybatisc.base.CodeStandardEnum;
 import cmc.mybatisc.utils.MapperStrongUtils;
 import lombok.Data;
+import lombok.Getter;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 实体解析器
@@ -17,12 +20,36 @@ import java.util.List;
  */
 @Data
 public class EntityParser {
+    /**
+     * 全局别名控制器
+     */
+    @Getter
+    private static final AliasParser alias = new AliasParser();
+    private static final Map<Class<?>, EntityParser> entities = new HashMap<>();
+
+    /**
+     * 实体
+     */
     private Class<?> entity;
+    /**
+     * 表名
+     */
     private String tableName;
+    /**
+     * 表别名
+     */
+    private String tableAlias;
+    /**
+     * 关键字段
+     */
     private Field keyField;
+    /**
+     * 字段列表
+     */
     private final List<String> fieldList = new ArrayList<>();
 
     public EntityParser(Class<?> entity) {
+        EntityParser.entities.put(entity,this);
         this.parse(entity);
     }
 
@@ -37,5 +64,12 @@ public class EntityParser {
         if (this.fieldList.isEmpty()) {
             this.fieldList.add("*");
         }
+        // 设置表别称
+        this.tableAlias = alias.set(this.tableName);
+    }
+
+
+    public static EntityParser computeIfAbsent(Class<?> entity){
+        return entities.computeIfAbsent(entity, EntityParser::new);
     }
 }

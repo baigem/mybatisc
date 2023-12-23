@@ -1,10 +1,12 @@
 package cmc.mybatisc.core;
 
+import com.baomidou.mybatisplus.core.override.MybatisMapperProxy;
 import lombok.Getter;
 import org.apache.ibatis.session.SqlSession;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,21 +18,19 @@ import java.util.function.Function;
  * @author cmc
  * @date 2023/05/24
  */
-public class MapperProxyStrengthen implements InvocationHandler {
-    @Getter
-    private final Class<?> mapper;
-    @Getter
+@Getter
+public class MapperProxyStrengthen<T> extends MybatisMapperProxy<T> implements InvocationHandler {
+    private final Class<T> mapper;
     private final Object target;
-    @Getter
     private final SqlSession sqlSession;
-    @Getter
     private final Map<Class<?>, String> resultMap = new HashMap<>();
     /**
      * 创建缓存
      */
     private final Map<Method, Function<Object[], Object>> cache = new LinkedHashMap<>();
 
-    public MapperProxyStrengthen(Class<?> mapper, SqlSession sqlSession, Object object) {
+    public MapperProxyStrengthen(Class<T> mapper, SqlSession sqlSession, Object object) {
+        super(sqlSession,mapper, Collections.emptyMap());
         this.sqlSession = sqlSession;
         this.target = object;
         this.mapper = mapper;
@@ -49,7 +49,4 @@ public class MapperProxyStrengthen implements InvocationHandler {
     }
 
 
-    public Map<Method, Function<Object[], Object>> getCache() {
-        return cache;
-    }
 }

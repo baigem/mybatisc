@@ -1,8 +1,9 @@
 package cmc.mybatisc.parser;
 
-import cmc.mybatisc.annotation.FieldDelete;
+import cmc.mybatisc.annotation.SoftDelete;
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.interfaces.DelFlag;
+import cmc.mybatisc.config.interfaces.TableEntity;
 import lombok.Data;
 
 import java.lang.reflect.Method;
@@ -15,7 +16,7 @@ import java.lang.reflect.Method;
  * &#064;date  2023/11/27
  */
 @Data
-public class FieldDeleteParser {
+public class SoftDeleteParser {
     /**
      * 映射器解析器
      */
@@ -29,27 +30,24 @@ public class FieldDeleteParser {
 
     private String tableAlias;
 
-    private DelFlag[] delFlag;
-
     private CodeStandardEnum nameMode;
 
     private String removeSuffix;
 
     private Class<?> exclude;
 
-    public FieldDeleteParser(FieldDelete fieldDelete, Method method, MapperParser mapperParser) {
+    public SoftDeleteParser(SoftDelete fieldDelete, Method method, MapperParser mapperParser) {
         this.parse(fieldDelete, method, mapperParser);
     }
 
-    private void parse(FieldDelete fieldDelete, Method method, MapperParser mapperParser) {
+    private void parse(SoftDelete fieldDelete, Method method, MapperParser mapperParser) {
         this.mapperParser = mapperParser;
-        if (fieldDelete.table() != Object.class) {
+        if (fieldDelete.table() != TableEntity.class) {
             EntityParser entityParser = new EntityParser(fieldDelete.table());
             this.table = entityParser.getTableName();
         }
-        this.delFlag = fieldDelete.delFlag();
         this.nameMode = fieldDelete.nameMode();
         this.removeSuffix = fieldDelete.removeSuffix();
-        this.exclude = fieldDelete.exclude();
+//        this.exclude = fieldDelete.exclude();
     }
 }

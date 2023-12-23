@@ -10,7 +10,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * @author baige
+ * iservice加强
+ *
+ * @author 程梦城
+ * @version 1.0.0
+ * &#064;date  2023/12/24
  */
 public interface IServiceStrengthen<B extends BaseMapper<T>, T> extends IService<T> {
     @Override

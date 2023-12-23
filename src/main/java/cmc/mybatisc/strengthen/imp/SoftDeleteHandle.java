@@ -2,17 +2,19 @@ package cmc.mybatisc.strengthen.imp;
 
 import cmc.mybatisc.annotation.SoftDelete;
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.DelFlagConfig;
+import cmc.mybatisc.config.MybatisScannerConfigurer;
 import cmc.mybatisc.model.ParamAnnotation;
+import cmc.mybatisc.parser.SqlParser;
 import cmc.mybatisc.strengthen.BaseStrengthen;
 import cmc.mybatisc.utils.MapperStrongUtils;
-import cn.hutool.core.date.DateUtil;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.util.StringUtils;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
-import java.util.Date;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -34,11 +36,12 @@ public class SoftDeleteHandle extends BaseStrengthen {
      */
     @Override
     public Function<Object[], Object> createdProxyMethod(Method method) {
-        String id = MapperStrongUtils.create(this.sqlSession, this.mapper, method, this.createdSql(method));
+        SqlParser sqlParser = this.createdSql(method);
+        String id = MapperStrongUtils.create(this.sqlSession, this.mapper, method, sqlParser.getSql());
         if (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class) {
-            return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p)) > 0;
+            return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p,sqlParser)) > 0;
         }
-        return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p));
+        return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p,sqlParser));
     }
 
     /**
@@ -48,31 +51,26 @@ public class SoftDeleteHandle extends BaseStrengthen {
      * @return {@link String}
      */
     @Override
-    public String createdSql(Method method) {
+    public SqlParser createdSql(Method method) {
+        SqlParser sqlParser = new SqlParser();
+        Map<String, Function<?, Serializable>> dy = sqlParser.getParameters();
+        DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
         SoftDelete softDelect = method.getAnnotation(SoftDelete.class);
+
         Parameter[] parameters = method.getParameters();
-        String table = MapperStrongUtils.getTableName(this.mapperParser.getTableName(), softDelect.table());
+        String table = this.mapperParser.getEntityParser().getTableName();
         if (!StringUtils.hasText(table)) {
             throw new IllegalArgumentException("table name is not empty");
         }
-        DelFlag delFlag = super.getDelFlag(softDelect.delFlag());
         CodeStandardEnum codeStandardEnum = this.getCodeStandardEnum(softDelect.nameMode());
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("<script> ");
-        if (delFlag != null) {
-            if (delFlag.isDeleteTime) {
-                // 判断是时间戳还是其他
-                if (delFlag.notDeleteValue.getClass() == Long.class) {
-                    stringBuilder.append("update ").append(table).append(" set ").append(delFlag.fieldName).append(" = ").append(System.currentTimeMillis()).append(" where ");
-                } else {
-                    stringBuilder.append("update ").append(table).append(" set ").append(delFlag.fieldName).append(" = ").append(String.format("\"%s\"", DateUtil.format(new Date(), "yyyy-MM-dd HH:mm:ss"))).append(" where ");
-                }
-            } else {
-                stringBuilder.append("update ").append(table).append(" set ").append(delFlag.fieldName).append(" = ").append(delFlag.deleteValue).append(" where ");
-            }
-            stringBuilder.append(this.generateDeleteFlag("", "and ", delFlag.fieldName, delFlag.notDeleteValue.toString(), delFlag.isDeleteTime));
-        }
+
+        // 进行删除
+        stringBuilder.append(delFlagConfig.generateDeleteSql(dy,super.mapperParser.getEntityParser(),"where "));
+        // 添加逻辑删除
+        stringBuilder.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getEntityParser(),"","and "));
         for (Parameter parameter : parameters) {
             ParamAnnotation generate = ParamAnnotation.generate(parameter);
             String fieldName = getFieldName(codeStandardEnum, generate.value, softDelect.removeSuffix());
@@ -83,6 +81,10 @@ public class SoftDeleteHandle extends BaseStrengthen {
                 stringBuilder.append(fieldName).append(" = #{").append(generate.value).append("} ").append(generate.oan.getValue()).append(" ");
             }
         }
-        return stringBuilder.toString().replaceAll(" not $| or $| and $", "") + "</script>";
+        sqlParser.setSql(stringBuilder.toString().replaceAll(" not $| or $| and $", "") + "</script>");
+
+        return sqlParser;
     }
+
+
 }

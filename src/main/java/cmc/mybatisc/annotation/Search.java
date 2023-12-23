@@ -2,7 +2,7 @@ package cmc.mybatisc.annotation;
 
 
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.interfaces.DelFlag;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -41,8 +41,6 @@ public @interface Search {
      * 添加字段
      */
     String[] addField() default {};
-
-    DelFlag[] delFlag() default {DelFlag.IS_DELETED, DelFlag.DEL_FLAG, DelFlag.TIME_DEL_FLAG,DelFlag.IS_DELETE};
 
     /**
      * 类型

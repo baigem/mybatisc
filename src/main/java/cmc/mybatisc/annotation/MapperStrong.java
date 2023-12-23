@@ -1,7 +1,7 @@
 package cmc.mybatisc.annotation;
 
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.interfaces.DelFlag;
 
 import java.lang.annotation.*;
 
@@ -21,11 +21,6 @@ public @interface MapperStrong {
      * 表名
      */
     String name() default "";
-
-    /**
-     * 删除标志
-     */
-    DelFlag[] delFlag() default {DelFlag.IS_DELETED, DelFlag.DEL_FLAG, DelFlag.TIME_DEL_FLAG,DelFlag.IS_DELETE};
 
     /**
      * 表结构对应的实体entity类

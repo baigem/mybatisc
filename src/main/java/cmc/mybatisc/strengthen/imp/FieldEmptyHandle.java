@@ -2,16 +2,22 @@ package cmc.mybatisc.strengthen.imp;
 
 import cmc.mybatisc.annotation.FieldEmpty;
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.DelFlagConfig;
+import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.config.interfaces.DelFlag;
 import cmc.mybatisc.model.ParamAnnotation;
+import cmc.mybatisc.parser.SqlParser;
 import cmc.mybatisc.strengthen.BaseStrengthen;
 import cmc.mybatisc.utils.MapperStrongUtils;
+import cn.hutool.extra.spring.SpringUtil;
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.util.StringUtils;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -35,11 +41,12 @@ public class FieldEmptyHandle extends BaseStrengthen {
      */
     @Override
     public Function<Object[], Object> createdProxyMethod(Method method) {
-        String id = MapperStrongUtils.create(this.sqlSession, this.mapper, method, this.createdSql(method));
+        SqlParser sqlParser = this.createdSql(method);
+        String id = MapperStrongUtils.create(this.sqlSession, this.mapper, method, sqlParser.getSql());
         if (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class) {
-            return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p)) > 0;
+            return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p, sqlParser)) > 0;
         }
-        return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p));
+        return (p) -> this.sqlSession.update(id, this.createMap(method.getParameters(), p, sqlParser));
     }
 
     /**
@@ -49,14 +56,16 @@ public class FieldEmptyHandle extends BaseStrengthen {
      * @return {@link String}
      */
     @Override
-    public String createdSql(Method method) {
+    public SqlParser createdSql(Method method) {
+        SqlParser sqlParser = new SqlParser();
+        Map<String, Function<?, Serializable>> dy = sqlParser.getParameters();
+        DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
         FieldEmpty softDelect = method.getAnnotation(FieldEmpty.class);
         Parameter[] parameters = method.getParameters();
-        String table = MapperStrongUtils.getTableName(this.mapperParser.getTableName(), softDelect.table());
+        String table = MapperStrongUtils.getTableName(this.mapperParser.getEntityParser().getTableName(), softDelect.table());
         if (!StringUtils.hasText(table)) {
             throw new IllegalArgumentException("table name is not empty");
         }
-        DelFlag delFlag = super.getDelFlag(softDelect.delFlag());
         CodeStandardEnum codeStandardEnum = this.getCodeStandardEnum(softDelect.nameMode());
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -71,10 +80,8 @@ public class FieldEmptyHandle extends BaseStrengthen {
             return fieldName + " = NULL";
         }).collect(Collectors.joining(", "));
         stringBuilder.append(collect).append(" where ");
-
-        if (delFlag != null) {
-            stringBuilder.append(this.generateDeleteFlag("", "and ", delFlag.fieldName, delFlag.notDeleteValue.toString(), delFlag.isDeleteTime));
-        }
+        // 添加逻辑删除条件
+        stringBuilder.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getEntityParser(),"","and"));
         if (parameters.length == 0) {
             throw new RuntimeException("清空的字段的条件不可为空");
         }
@@ -88,6 +95,7 @@ public class FieldEmptyHandle extends BaseStrengthen {
                 stringBuilder.append(fieldName).append(" = #{").append(generate.value).append("} ").append(generate.oan.getValue()).append(" ");
             }
         }
-        return stringBuilder.toString().replaceAll(" not $| or $| and $|where $", "") + "</script>";
+        sqlParser.setSql(stringBuilder.toString().replaceAll(" not $| or $| and $|where $", "") + "</script>");
+        return sqlParser;
     }
 }

@@ -1,7 +1,7 @@
 package cmc.mybatisc.annotation;
 
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.interfaces.DelFlag;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -26,11 +26,6 @@ public @interface FieldEmpty {
      * 需要清空的字段列表
      */
     DataScope.Field[] value();
-
-    /**
-     * 删除标志
-     */
-    DelFlag[] delFlag() default {DelFlag.IS_DELETED, DelFlag.DEL_FLAG, DelFlag.TIME_DEL_FLAG,DelFlag.IS_DELETE};
 
     /**
      * 类型

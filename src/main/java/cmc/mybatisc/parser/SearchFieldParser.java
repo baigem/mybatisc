@@ -123,8 +123,8 @@ public class SearchFieldParser {
 
         // 设置表别名
         for (JoinParser joinParser : this.joinList) {
-            aliasParser.set(joinParser.getTable());
-            aliasParser.set(joinParser.getLinkTable());
+            aliasParser.set(joinParser.getEntityParser().getTableName());
+            aliasParser.set(joinParser.getLinkTableEntityParser().getTableName());
         }
     }
 

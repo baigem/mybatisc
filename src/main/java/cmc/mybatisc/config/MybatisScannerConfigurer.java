@@ -1,7 +1,8 @@
 package cmc.mybatisc.config;
 
 import cmc.mybatisc.annotation.MapperStrong;
-import cmc.mybatisc.core.ApigoMapperFactoryBeanClass;
+import cmc.mybatisc.core.MapperFactoryBeanClass;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.annotations.Mapper;
 import org.mybatis.spring.mapper.MapperScannerConfigurer;
@@ -23,6 +24,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MybatisScannerConfigurer implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
     private MapperScannerConfigurer mapperScannerConfigurer;
+    @Getter
+    private static ConfigurableListableBeanFactory beanFactory;
 
 
     public MybatisScannerConfigurer() {
@@ -56,7 +59,7 @@ public class MybatisScannerConfigurer implements BeanDefinitionRegistryPostProce
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.mapperScannerConfigurer = applicationContext.getBean(MapperScannerConfigurer.class);
         // 重新设置代理类
-        this.mapperScannerConfigurer.setMapperFactoryBeanClass(ApigoMapperFactoryBeanClass.class);
+        this.mapperScannerConfigurer.setMapperFactoryBeanClass(MapperFactoryBeanClass.class);
     }
 
     /**
@@ -70,6 +73,6 @@ public class MybatisScannerConfigurer implements BeanDefinitionRegistryPostProce
      */
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-
+        MybatisScannerConfigurer.beanFactory = beanFactory;
     }
 }

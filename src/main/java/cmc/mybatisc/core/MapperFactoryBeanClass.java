@@ -11,16 +11,23 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 映射器工厂bean类
+ *
+ * @author 程梦城
+ * @version 1.0.0
+ * &#064;date  2023/12/24
+ */
 @SuppressWarnings(value = {"unchecked"})
-public class ApigoMapperFactoryBeanClass<T> extends MapperFactoryBean<T> {
+public class MapperFactoryBeanClass<T> extends MapperFactoryBean<T> {
 
     @SuppressWarnings("unused")
-    public ApigoMapperFactoryBeanClass() {
+    public MapperFactoryBeanClass() {
         // intentionally empty
     }
 
     @SuppressWarnings("unused")
-    public ApigoMapperFactoryBeanClass(Class<T> mapperInterface) {
+    public MapperFactoryBeanClass(Class<T> mapperInterface) {
         super.setMapperInterface(mapperInterface);
     }
 
@@ -36,7 +43,6 @@ public class ApigoMapperFactoryBeanClass<T> extends MapperFactoryBean<T> {
         List<Method> collect = Arrays.stream(mapperInterface.getMethods())
                 .filter(method -> method.isAnnotationPresent(FieldSelect.class) ||
                         method.isAnnotationPresent(FieldEmpty.class) ||
-                        method.isAnnotationPresent(FieldDelete.class) ||
                         method.isAnnotationPresent(Search.class) ||
                         method.isAnnotationPresent(SoftDelete.class)
                 )
@@ -47,18 +53,15 @@ public class ApigoMapperFactoryBeanClass<T> extends MapperFactoryBean<T> {
         logger.debug("Strengthen " + super.getMapperInterface().getSimpleName() + " Success");
         // 再次进行动态代理，对mybatis进行增强
         SqlSession sqlSession = getSqlSession();
-        MapperProxyStrengthen mapperProxyStrengthen = new MapperProxyStrengthen(mapperInterface, sqlSession, object);
+        MapperProxyStrengthen<T> mapperProxyStrengthen = new MapperProxyStrengthen<>(mapperInterface, sqlSession, object);
         FieldSelectHandle fieldSelectHandle = new FieldSelectHandle(sqlSession, mapperInterface);
         FieldEmptyHandle fieldEmptyHandle = new FieldEmptyHandle(sqlSession, mapperInterface);
-        FieldDeleteHandle fieldDeleteHandle = new FieldDeleteHandle(sqlSession, mapperInterface);
         SearchHandle searchHandle = new SearchHandle(sqlSession, mapperInterface);
         SoftDeleteHandle softDeleteHandle = new SoftDeleteHandle(sqlSession, mapperInterface);
         // 创建代理缓存
         collect.forEach(method -> {
             if (method.isAnnotationPresent(FieldSelect.class)) {
                 mapperProxyStrengthen.getCache().put(method, fieldSelectHandle.createdProxyMethod(method));
-            } else if (method.isAnnotationPresent(FieldDelete.class)) {
-                mapperProxyStrengthen.getCache().put(method, fieldDeleteHandle.createdProxyMethod(method));
             } else if (method.isAnnotationPresent(Search.class)) {
                 mapperProxyStrengthen.getCache().put(method, searchHandle.createdProxyMethod(method));
             } else if (method.isAnnotationPresent(FieldEmpty.class)) {

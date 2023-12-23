@@ -5,9 +5,11 @@ import cmc.mybatisc.base.CodeStandardEnum;
 import cmc.mybatisc.utils.MapperStrongUtils;
 import cmc.mybatisc.utils.reflect.GenericType;
 import lombok.Data;
+import lombok.Getter;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,14 +22,31 @@ import java.util.Optional;
  */
 @Data
 public class MapperParser {
+    /**
+     * 全局储存器
+     */
+    private static final List<MapperParser> list = new ArrayList<>();
+
+    /**
+     * mapper增强注解
+     */
     private MapperStrong mapperStrong;
+    /**
+     * mapper代理对象
+     */
     private Class<?> mapper;
+    /**
+     * 表实体对象
+     */
     private Class<?> entity;
-    private String tableName;
-    private Field keyField;
-    private final List<String> fieldList = new ArrayList<>();
+
+    /**
+     * 实体解析器
+     */
+    private EntityParser entityParser;
 
     public MapperParser(Class<?> mapper) {
+        list.add(this);
         this.mapper = mapper;
         this.mapperStrong = mapper.getAnnotation(MapperStrong.class);
         if (this.mapperStrong != null && this.mapperStrong.value() != Class.class) {
@@ -37,28 +56,44 @@ public class MapperParser {
         } else {
             this.entity = null;
         }
-
         if (this.entity != null) {
-            // 获取主键
-            this.keyField = MapperStrongUtils.getKeyField(this.entity);
-            // 获取表名
-            this.tableName = MapperStrongUtils.getTableName(this.entity, Optional.ofNullable(this.mapperStrong).map(MapperStrong::name).orElse(null));
-            // 获取字段名称
-            this.fieldList.addAll(MapperStrongUtils.getFieldNames(this.entity, Optional.ofNullable(this.mapperStrong).map(MapperStrong::nameMode).orElse(CodeStandardEnum.UNDERLINE)));
-            if (this.fieldList.isEmpty()) {
-                this.fieldList.add("*");
-            }
-        } else {
-            this.keyField = null;
-            this.tableName = null;
-            this.fieldList.add("*");
+            this.entityParser = new EntityParser(this.entity);
+            List<String> fieldList = this.entityParser.getFieldList();
+            // 删除需要排除的字段
+            Optional.ofNullable(this.mapperStrong).ifPresent(info -> {
+                Arrays.stream(info.ignoreField()).forEach(fieldList::remove);
+            });
         }
+    }
 
-        // 删除需要排除的字段
-        Optional.ofNullable(this.mapperStrong).ifPresent(info -> {
-            for (String s : info.ignoreField()) {
-                this.fieldList.remove(s);
+    /**
+     * 获取
+     *
+     * @param tableName 表名
+     * @return {@link MapperParser}
+     */
+    public static MapperParser get(String tableName){
+        for (MapperParser mapperParser : MapperParser.list) {
+            if(tableName.equals(mapperParser.entityParser.getTableName())){
+                return mapperParser;
             }
-        });
+        }
+        return null;
+    }
+
+    /**
+     * 获取
+     *
+     * @param entity 实体
+     * @return {@link MapperParser}
+     */
+    public static MapperParser get(Class<?> entity){
+        for (MapperParser mapperParser : MapperParser.list) {
+            if(entity == mapperParser.entity){
+                return mapperParser;
+            }
+        }
+        return null;
     }
 }
+

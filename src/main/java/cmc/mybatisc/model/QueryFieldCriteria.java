@@ -116,7 +116,7 @@ public class QueryFieldCriteria {
         List<QueryFieldCriteria> list = new ArrayList<>();
         for (SearchParameterParser searchParameterParser : searchParser.getParameterParserList()) {
             for (SearchFieldParser fieldParser : searchParameterParser.getSearchFieldList()) {
-                String tableName = fieldParser.getJoinList().isEmpty() ? searchParser.getNameMode().handler(searchParser.getTable()) : fieldParser.getJoinList().get(fieldParser.getJoinList().size() - 1).getTable();
+                String tableName = fieldParser.getJoinList().isEmpty() ? searchParser.getNameMode().handler(searchParser.getTable()) : fieldParser.getJoinList().get(fieldParser.getJoinList().size() - 1).getEntityParser().getTableName();
                 String alias = fieldParser.getJoinList().isEmpty() ? searchParser.getTableAlias() : fieldParser.getJoinList().get(fieldParser.getJoinList().size() - 1).getTableAlias();
                 QueryFieldCriteria build = QueryFieldCriteria.builder()
                         .parameter(searchParameterParser.getParameter())

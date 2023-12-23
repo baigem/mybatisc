@@ -1,8 +1,8 @@
 package cmc.mybatisc.utils;
 
 import cmc.mybatisc.annotation.FieldSelect;
-import cmc.mybatisc.annotation.TableEntity;
 import cmc.mybatisc.base.CodeStandardEnum;
+import cmc.mybatisc.config.interfaces.TableEntity;
 import cmc.mybatisc.utils.reflect.GenericType;
 import cmc.mybatisc.utils.reflect.ReflectUtils;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -98,21 +98,10 @@ public class MapperStrongUtils {
         if (tableName != null && StringUtils.hasText(tableName.value())) {
             return tableName.value();
         }
-        TableEntity annotation = entity.getAnnotation(TableEntity.class);
-
-        if (annotation == null) {
-            if (StringUtils.hasText(name)) {
-                return name;
-            }
-            return CodeStandardEnum.UNDERLINE.handler(entity.getSimpleName());
+        if (StringUtils.hasText(name)) {
+            return name;
         }
-        if (StringUtils.hasText(annotation.value())) {
-            return annotation.nameMode().handler(annotation.value());
-        }
-        if (annotation.isClassName()) {
-            return annotation.nameMode().handler(entity.getSimpleName());
-        }
-        return name;
+        return CodeStandardEnum.UNDERLINE.handler(entity.getSimpleName());
     }
 
     /**

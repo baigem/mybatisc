@@ -1,7 +1,7 @@
 package cmc.mybatisc.parser;
 
 import cmc.mybatisc.annotation.Join;
-import cmc.mybatisc.model.DelFlag;
+import cmc.mybatisc.config.interfaces.TableEntity;
 import lombok.Data;
 import org.springframework.util.StringUtils;
 
@@ -18,10 +18,18 @@ public class JoinParser {
      * 源数据
      */
     private Join join;
+
     /**
      * 关联的表
      */
-    private String table;
+    private Class<?> table;
+    /**
+     * 映射器解析器
+     */
+    private EntityParser entityParser;
+    /**
+     * 表别名
+     */
     private String tableAlias;
     /**
      * 关联表的字段
@@ -34,7 +42,14 @@ public class JoinParser {
     /**
      * 需要关联的表，默认主表
      */
-    private String linkTable;
+    private Class<?> linkTable;
+    /**
+     * 链接表映射器解析器
+     */
+    private EntityParser linkTableEntityParser;
+    /**
+     * 链接表别名
+     */
     private String linkTableAlias;
     /**
      * 关联表的字段，默认是field
@@ -44,10 +59,6 @@ public class JoinParser {
      * 此表是否是返回数据的表
      */
     private Boolean isDataScope;
-    /**
-     * 此表的逻辑删除，后期优化掉
-     */
-    private DelFlag[] delFlag;
 
     public JoinParser(Join join, AliasParser aliasParser) {
         this.parse(join, aliasParser);
@@ -62,20 +73,23 @@ public class JoinParser {
         this.linkTable = join.linkTable();
         this.linkField = join.linkField();
         this.isDataScope = join.isDataScope();
-        this.delFlag = join.delFlag();
         if (!StringUtils.hasText(this.linkField)) {
             this.linkField = this.field;
         }
-        if (!StringUtils.hasText(this.linkTable)) {
-            this.linkTable = aliasParser.getMainTable();
+        if (this.linkTable == TableEntity.class) {
+            this.linkTable = aliasParser.getMainTableClass();
         }
-        // 设置别名
-        aliasParser.set(this.table);
-        aliasParser.set(this.linkTable);
-
-        // 回写别名
-        this.tableAlias = aliasParser.get(this.table);
-        this.linkTableAlias = aliasParser.get(this.linkTable);
+        this.entityParser = EntityParser.computeIfAbsent(this.table);
+        this.linkTableEntityParser = EntityParser.computeIfAbsent(this.linkTable);
+        if(this.entityParser != null){
+            // 设置别名
+            aliasParser.set(this.entityParser.getTableName());
+            // 回写别名
+            this.tableAlias = aliasParser.get(this.entityParser.getTableName());
+        }
+        if(this.linkTableEntityParser != null){
+            this.linkTableAlias = aliasParser.set(this.linkTableEntityParser.getTableName());
+        }
     }
 
     /**
@@ -84,6 +98,6 @@ public class JoinParser {
      * @return boolean
      */
     public boolean isPresent() {
-        return StringUtils.hasText(this.table);
+        return this.table != null;
     }
 }

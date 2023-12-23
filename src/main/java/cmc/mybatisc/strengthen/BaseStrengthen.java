@@ -1,11 +1,10 @@
 package cmc.mybatisc.strengthen;
 
-import cmc.mybatisc.annotation.Search;
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.model.DelFlag;
 import cmc.mybatisc.model.FieldSelectDataSource;
 import cmc.mybatisc.model.ParamAnnotation;
 import cmc.mybatisc.parser.MapperParser;
+import cmc.mybatisc.parser.SqlParser;
 import cmc.mybatisc.utils.MapperStrongUtils;
 import cmc.mybatisc.utils.SqlUtils;
 import cmc.mybatisc.utils.reflect.GenericType;
@@ -51,13 +50,13 @@ public abstract class BaseStrengthen implements Strengthen {
         this.mapperParser = new MapperParser(mapper);
 
         // 处理字段名称
-        this.handleFieldString = this.mapperParser.getFieldList().stream().map(field -> {
+        this.handleFieldString = this.mapperParser.getEntityParser().getFieldList().stream().map(field -> {
             if (field.startsWith("`") || field.equals("*")) {
                 return field;
             }
             return "`" + field + "`";
         }).collect(Collectors.joining(","));
-        TABLE_STRENGTHEN.put(this.mapperParser.getTableName(), this);
+        TABLE_STRENGTHEN.put(this.mapperParser.getEntityParser().getTableName(), this);
     }
 
     /**
@@ -73,24 +72,6 @@ public abstract class BaseStrengthen implements Strengthen {
             return codeStandardEnum.handler(fieldName);
         }
         return SqlUtils.packageField(codeStandardEnum.handler(fieldName.replaceAll(suffix + "$", "")));
-    }
-
-    /**
-     * 获取表别名
-     *
-     * @param tableName 表名
-     * @return {@link String}
-     */
-    public static String getTableAlias(String tableName) {
-        char[] charArray = tableName.toCharArray();
-        StringBuilder sb = new StringBuilder();
-        sb.append(charArray[0]);
-        for (int i = 0; i < charArray.length; i++) {
-            if (charArray[i] == '_') {
-                sb.append(charArray[i + 1]);
-            }
-        }
-        return sb.toString();
     }
 
     /**
@@ -110,7 +91,7 @@ public abstract class BaseStrengthen implements Strengthen {
      * @param args       args
      * @return {@link Map}<{@link String}, {@link Object}>
      */
-    public Map<String, Object> createMap(Parameter[] parameters, Object[] args) {
+    public Map<String, Object> createMap(Parameter[] parameters, Object[] args, SqlParser sqlParser) {
         HashMap<String, Object> map = new HashMap<>();
         for (int i = 0; i < parameters.length; i++) {
             String name = parameters[i].getName();
@@ -119,25 +100,11 @@ public abstract class BaseStrengthen implements Strengthen {
             }
             map.put(name, args[i]);
         }
+        // 添加动态参数
+        sqlParser.getParameters().forEach((k,v)->{
+            map.put(k,v.apply(null));
+        });
         return map;
-    }
-
-    /**
-     * 获取删除值
-     *
-     * @param value 值
-     * @return {@link String}
-     */
-    public DelFlag getDelFlag(DelFlag[] value) {
-        if (this.mapperParser.getMapperStrong() != null) {
-            value = this.mapperParser.getMapperStrong().delFlag();
-        }
-        for (DelFlag delFlag : value) {
-            if (this.mapperParser.getFieldList().contains(delFlag.fieldName)) {
-                return delFlag;
-            }
-        }
-        return null;
     }
 
     /**
@@ -148,13 +115,13 @@ public abstract class BaseStrengthen implements Strengthen {
      * @param id        id
      * @return {@link Function}<{@link Object[]}, {@link Object}>
      */
-    protected Function<Object[], Object> mapKey(boolean full, Method method, String fieldName, String id) {
-        if (!StringUtils.hasText(fieldName) && this.mapperParser.getKeyField() == null) {
+    protected Function<Object[], Object> mapKey(boolean full, Method method, String fieldName, String id,SqlParser sqlParser) {
+        if (!StringUtils.hasText(fieldName) && this.mapperParser.getEntityParser().getKeyField() == null) {
             throw new RuntimeException("启动mapping属性，主键id未配置，请配置主键id注解@TableId，或者使用mappingField配置");
         }
         // 获取泛型类型
         GenericType genericType = GenericType.forMethod(this.mapper, method);
-        String keyName = StringUtils.hasText(fieldName) ? fieldName : this.mapperParser.getKeyField().getName();
+        String keyName = StringUtils.hasText(fieldName) ? fieldName : this.mapperParser.getEntityParser().getKeyField().getName();
         Class<?> returnTypeClass = genericType.last(method.getReturnType());
         Field key = this.getPrototypeChainField(returnTypeClass, keyName);
         if (key == null) {
@@ -168,7 +135,7 @@ public abstract class BaseStrengthen implements Strengthen {
             if (!this.checkInputParameters(full, p)) {
                 return new HashMap<>();
             }
-            List<Object> objects = this.sqlSession.selectList(id, this.createMap(method.getParameters(), p));
+            List<Object> objects = this.sqlSession.selectList(id, this.createMap(method.getParameters(), p, sqlParser));
             return objects.stream().collect(HashMap::new, (m, v) -> {
                 try {
                     m.put(key.get(v), v);
@@ -180,55 +147,12 @@ public abstract class BaseStrengthen implements Strengthen {
     }
 
     /**
-     * 获取显示字段
-     *
-     * @param search 搜索
-     * @param alias  别名
-     * @return {@link List}<{@link String}>
-     */
-    public List<String> getDisplayField(Search search, String alias, Map<String, String> aliasMap) {
-        List<String> strings = Arrays.asList(search.excludeField());
-        List<String> list = new ArrayList<>(this.mapperParser.getFieldList());
-        list.addAll(Arrays.asList(search.addField()));
-        // 去重
-        return list.stream().distinct().filter(e -> !strings.contains(e)).map(e -> {
-            if (e.contains(".")) {
-                // 把.前的表名获取出来
-                String tableName = e.substring(0, e.indexOf(".")).replaceAll("['`]", "");
-                String field = e.substring(e.indexOf(".") + 1).replaceAll("['`]", "");
-                if (aliasMap.containsKey(tableName)) {
-                    return aliasMap.get(tableName) + "." + field;
-                }
-                aliasMap.put(tableName, BaseStrengthen.getTableAlias(tableName));
-                return aliasMap.get(tableName) + "." + field;
-            } else {
-                return alias + "." + e;
-            }
-        }).collect(Collectors.toList());
-    }
-
-
-    /**
-     * 生成删除标志
-     *
-     * @return {@link String}
-     */
-    public String generateDeleteFlag(String prefix, String suffix, String field, String delFlag, boolean isDeleteDate) {
-        // 能进来说明一定有逻辑删除字段
-        if (!StringUtils.hasText(delFlag)) {
-            return prefix + field + " is null " + suffix;
-        } else {
-            return prefix + field + " = " + delFlag + " " + suffix;
-        }
-    }
-
-    /**
      * 生成代理方法
      *
      * @param fieldSelectDataSource 字段查询数据源
      * @return {@link Function}<{@link Object[]}, {@link Object}>
      */
-    public Function<Object[], Object> generateProxyMethod(FieldSelectDataSource fieldSelectDataSource) {
+    public Function<Object[], Object> generateProxyMethod(FieldSelectDataSource fieldSelectDataSource,SqlParser sqlParser) {
         Class<?> returnType = fieldSelectDataSource.getMethod().getReturnType();
         String id = fieldSelectDataSource.getId();
         Method method = fieldSelectDataSource.getMethod();
@@ -246,14 +170,14 @@ public abstract class BaseStrengthen implements Strengthen {
         // 判断是否需要进行key->value 处理
         boolean finalIsNull = isNull;
         if (returnType == Map.class && fieldSelectDataSource.getMapping()) {
-            return this.mapKey(isNull, method, fieldSelectDataSource.getMappingField(), id);
+            return this.mapKey(isNull, method, fieldSelectDataSource.getMappingField(), id, sqlParser);
         } else if (MapperStrongUtils.isListTypeClass(returnType)) {
-            return (p) -> this.checkInputParameters(finalIsNull, p) ? this.sqlSession.selectList(id, this.createMap(method.getParameters(), p)) : new ArrayList<>();
+            return (p) -> this.checkInputParameters(finalIsNull, p) ? this.sqlSession.selectList(id, this.createMap(method.getParameters(), p,sqlParser)) : new ArrayList<>();
         } else if (returnType == Optional.class) {
             // 参数转换
-            return (p) -> Optional.ofNullable(this.checkInputParameters(finalIsNull, p) ? this.sqlSession.selectOne(id, this.createMap(method.getParameters(), p)) : null);
+            return (p) -> Optional.ofNullable(this.checkInputParameters(finalIsNull, p) ? this.sqlSession.selectOne(id, this.createMap(method.getParameters(), p, sqlParser)) : null);
         } else {
-            return (p) -> this.checkInputParameters(finalIsNull, p) ? this.sqlSession.selectOne(id, this.createMap(method.getParameters(), p)) : null;
+            return (p) -> this.checkInputParameters(finalIsNull, p) ? this.sqlSession.selectOne(id, this.createMap(method.getParameters(), p, sqlParser)) : null;
         }
     }
 

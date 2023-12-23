@@ -1,6 +1,7 @@
 package cmc.mybatisc.model;
 
 import cmc.mybatisc.base.CodeStandardEnum;
+import cmc.mybatisc.config.interfaces.DelFlag;
 import cmc.mybatisc.utils.reflect.ReflectUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,10 +50,6 @@ public class FieldSelectDataSource {
      */
     private String field;
     /**
-     * 逻辑删除类型
-     */
-    private List<DelFlag> delFlag;
-    /**
      * 名称规范
      */
     private CodeStandardEnum nameMode;
@@ -84,7 +81,6 @@ public class FieldSelectDataSource {
         // 进行反射获取注解中的值
         String table = ReflectUtils.invokeGet(annotation, "table", "");
         String field = ReflectUtils.invokeGet(annotation, "value", "");
-        DelFlag[] delFlag = ReflectUtils.invokeGet(annotation, "delFlag", null);
         CodeStandardEnum nameMode = ReflectUtils.invokeGet(annotation, "nameMode", null);
         boolean isLike = ReflectUtils.invokeGet(annotation, "like", false);
         String removeSuffix = ReflectUtils.invokeGet(annotation, "removeSuffix", "");
@@ -95,7 +91,6 @@ public class FieldSelectDataSource {
         return FieldSelectDataSource.builder()
                 .table(table)
                 .field(field)
-                .delFlag(Arrays.stream(delFlag).collect(Collectors.toList()))
                 .nameMode(nameMode)
                 .like(isLike)
                 .removeSuffix(removeSuffix)
