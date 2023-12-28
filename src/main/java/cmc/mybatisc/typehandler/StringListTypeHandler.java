@@ -1,6 +1,6 @@
 package cmc.mybatisc.typehandler;
 
-import cmc.mybatisc.base.StringList;
+import cmc.mybatisc.base.model.StringList;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 

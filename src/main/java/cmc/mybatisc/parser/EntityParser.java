@@ -4,7 +4,9 @@ import cmc.mybatisc.base.CodeStandardEnum;
 import cmc.mybatisc.utils.MapperStrongUtils;
 import lombok.Data;
 import lombok.Getter;
+import lombok.SneakyThrows;
 
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +28,6 @@ public class EntityParser {
     @Getter
     private static final AliasParser alias = new AliasParser();
     private static final Map<Class<?>, EntityParser> entities = new HashMap<>();
-
     /**
      * 实体
      */
@@ -52,6 +53,31 @@ public class EntityParser {
         EntityParser.entities.put(entity,this);
         this.parse(entity);
     }
+
+    /**
+     * 设置键字段值
+     *
+     * @param obj   obj
+     * @param value 值
+     */
+    @SneakyThrows
+    public void setKeyFieldValue(Object obj, Object value) {
+        keyField.setAccessible(true);
+        keyField.set(obj,value);
+    }
+
+    /**
+     * 获取关键字段值
+     *
+     * @param obj obj
+     * @return {@link Serializable}
+     */
+    @SneakyThrows
+    public <R extends Serializable> R getKeyFieldValue(Object obj) {
+        keyField.setAccessible(true);
+        return (R) keyField.get(obj);
+    }
+
 
     private void parse(Class<?> entity) {
         this.entity = entity;

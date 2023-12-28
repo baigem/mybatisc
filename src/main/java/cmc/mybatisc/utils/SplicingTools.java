@@ -21,7 +21,7 @@ public class SplicingTools {
     /**
      * 分隔符
      */
-    private static final String DELIMITER = ",";
+    public static final String DELIMITER = ",";
 
 
     /**

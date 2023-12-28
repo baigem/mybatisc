@@ -1,6 +1,6 @@
 package cmc.mybatisc.config;
 
-import cmc.mybatisc.base.StringList;
+import cmc.mybatisc.base.model.StringList;
 import cmc.mybatisc.utils.reflect.GenericType;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;

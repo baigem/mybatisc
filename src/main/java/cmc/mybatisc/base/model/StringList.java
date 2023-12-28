@@ -1,4 +1,4 @@
-package cmc.mybatisc.base;
+package cmc.mybatisc.base.model;
 
 import cmc.mybatisc.utils.SplicingTools;
 import cmc.mybatisc.utils.list.ListUtil;
@@ -10,9 +10,7 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.SneakyThrows;
+import lombok.*;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,15 +26,22 @@ import java.util.stream.Collectors;
  * @version 1.0.0
  * &#064;date  2023/12/01
  */
+@Data
+@EqualsAndHashCode(callSuper = true)
 @JsonDeserialize(using = StringList.StringListDeserializer.class)
 @JsonSerialize(using = StringList.StringListSerializer.class)
 @NoArgsConstructor
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class StringList<T extends Serializable> extends ArrayList<T> implements CharacterString{
+    /**
+     * 分隔符
+     */
+    private String delimiter = SplicingTools.DELIMITER;
+
+
     public static <T extends Serializable,R> StringList<T> create(List<R> list, Function<R,T> get){
         return new StringList<>(ListUtil.extract(list,get));
     }
-
 
     public StringList(List<T> list) {
         super(list.size());
@@ -48,7 +53,9 @@ public class StringList<T extends Serializable> extends ArrayList<T> implements 
         if(values.startsWith("[") && values.endsWith("]")){
             super.addAll(JSON.parseArray(values,first));
         }else{
-            super.addAll(SplicingTools.parse(values,first));
+            // 最后一位为分隔符
+            this.delimiter = values.charAt(values.length() - 1)+"";
+            super.addAll(SplicingTools.parse(values.substring(0,values.length()-1),this.delimiter,first));
         }
     }
 
@@ -75,7 +82,7 @@ public class StringList<T extends Serializable> extends ArrayList<T> implements 
 
     @Override
     public String toString() {
-        return SplicingTools.generate(this.stream().map(String::valueOf).collect(Collectors.toList()));
+        return SplicingTools.generate(this.stream().map(String::valueOf).collect(Collectors.toList()),delimiter)+this.delimiter;
     }
 
     @NoArgsConstructor

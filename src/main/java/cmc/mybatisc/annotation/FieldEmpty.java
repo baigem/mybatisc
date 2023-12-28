@@ -2,6 +2,7 @@ package cmc.mybatisc.annotation;
 
 import cmc.mybatisc.base.CodeStandardEnum;
 import cmc.mybatisc.config.interfaces.DelFlag;
+import cmc.mybatisc.config.interfaces.TableEntity;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -20,7 +21,7 @@ public @interface FieldEmpty {
     /**
      * 查询表
      */
-    String table() default "";
+    Class<TableEntity> table() default TableEntity.class;
 
     /**
      * 需要清空的字段列表

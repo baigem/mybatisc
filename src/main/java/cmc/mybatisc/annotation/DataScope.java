@@ -1,6 +1,6 @@
 package cmc.mybatisc.annotation;
 
-import cmc.mybatisc.base.BaseDict;
+import cmc.mybatisc.base.model.BaseDict;
 import cmc.mybatisc.datafilter.core.DataFilterOption;
 
 import java.lang.annotation.*;

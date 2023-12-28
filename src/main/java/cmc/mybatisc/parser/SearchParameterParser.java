@@ -1,6 +1,7 @@
 package cmc.mybatisc.parser;
 
 import cmc.mybatisc.annotation.SearchField;
+import cmc.mybatisc.utils.reflect.ReflectUtils;
 import lombok.Data;
 
 import java.lang.reflect.Field;
@@ -17,8 +18,17 @@ import java.util.List;
  */
 @Data
 public class SearchParameterParser {
+    /**
+     * 参数
+     */
     private Parameter parameter;
+    /**
+     * 姓名
+     */
     private String name;
+    /**
+     * 搜索字段列表
+     */
     private List<SearchFieldParser> searchFieldList = new ArrayList<>();
 
     public SearchParameterParser(Parameter parameter, AliasParser aliasParser) {
@@ -29,7 +39,7 @@ public class SearchParameterParser {
         this.parameter = parameter;
         this.name = parameter.getName();
         Class<?> type = parameter.getType();
-        for (Field declaredField : type.getDeclaredFields()) {
+        for (Field declaredField : ReflectUtils.getAllField(type)) {
             if (declaredField.isAnnotationPresent(SearchField.class)) {
                 this.searchFieldList.add(new SearchFieldParser(aliasParser, declaredField.getAnnotation(SearchField.class), declaredField));
             }

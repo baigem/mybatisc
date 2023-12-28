@@ -1,7 +1,8 @@
 package cmc.mybatisc.utils;
 
 import cmc.mybatisc.annotation.Search;
-import cmc.mybatisc.base.CharacterString;
+import cmc.mybatisc.base.model.CharacterString;
+import cmc.mybatisc.base.model.StringList;
 import cmc.mybatisc.model.QueryFieldCriteria;
 import cmc.mybatisc.parser.SearchParser;
 import cmc.mybatisc.utils.map.MapUtil;
@@ -50,6 +51,9 @@ public class SqlUtils {
             } else if (info.getFieldClass() == List.class) {
                 // 列表查询
                 return generateForSql(info);
+            }  else if (info.getFieldClass() == StringList.class) {
+                // 字符串列表查询
+                return generateStringForSql(info);
             } else {
                 // 数字查询
                 return generateNumberIfSql(info);
@@ -157,6 +161,19 @@ public class SqlUtils {
                 "                         open=\"${andStr} ${alias}.${fieldName} in (\"\n" +
                 "                         separator=\",\" close=\")\">\n" +
                 "                    #{item}\n" +
+                "                </foreach>\n" +
+                "            </if>", map);
+    }
+
+    public static String generateStringForSql(QueryFieldCriteria queryFieldCriteria) {
+        String and = queryFieldCriteria.isAnd() ? "and" : "or";
+        Map<String, Object> map = MapUtil.toMap(queryFieldCriteria);
+        map.put("andStr", and);
+        return StringUtils.template("<if test=\"${fullName} != null and ${fullName}.size() > 0\">\n" +
+                "                <foreach collection=\"${fullName}\" index=\"index\" item=\"item\"\n" +
+                "                         open=\"${andStr} \"\n" +
+                "                         separator=\"${andStr}\">\n" +
+                "                    ${alias}.${fieldName} like concat('%',#{item},#{${fullName}.getDelimiter()},'%')\n" +
                 "                </foreach>\n" +
                 "            </if>", map);
     }

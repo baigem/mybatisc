@@ -1,6 +1,6 @@
 package cmc.mybatisc.config;
 
-import cmc.mybatisc.base.BaseDict;
+import cmc.mybatisc.base.model.BaseDict;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.ConverterFactory;
 

@@ -60,23 +60,24 @@ public class FieldEmptyHandle extends BaseStrengthen {
         SqlParser sqlParser = new SqlParser();
         Map<String, Function<?, Serializable>> dy = sqlParser.getParameters();
         DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
-        FieldEmpty softDelect = method.getAnnotation(FieldEmpty.class);
+        FieldEmpty fieldEmpty = method.getAnnotation(FieldEmpty.class);
         Parameter[] parameters = method.getParameters();
-        String table = MapperStrongUtils.getTableName(this.mapperParser.getEntityParser().getTableName(), softDelect.table());
+        String table = MapperStrongUtils.getTableName(this.mapperParser.getEntityParser().getTableName(), "");
+        String tableAlias = this.mapperParser.getEntityParser().getTableAlias();
         if (!StringUtils.hasText(table)) {
             throw new IllegalArgumentException("table name is not empty");
         }
-        CodeStandardEnum codeStandardEnum = this.getCodeStandardEnum(softDelect.nameMode());
+        CodeStandardEnum codeStandardEnum = this.getCodeStandardEnum(fieldEmpty.nameMode());
 
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("<script> ");
 
-        if (softDelect.value().length == 0) {
+        if (fieldEmpty.value().length == 0) {
             throw new RuntimeException("清空的字段不可为空");
         }
-        stringBuilder.append("update ").append(table).append(" set ");
-        String collect = Arrays.stream(softDelect.value()).map(s -> {
-            String fieldName = getFieldName(codeStandardEnum, s.getValue(), softDelect.removeSuffix());
+        stringBuilder.append("update ").append(table).append(" as ").append(tableAlias).append(" set ");
+        String collect = Arrays.stream(fieldEmpty.value()).map(s -> {
+            String fieldName = getFieldName(codeStandardEnum, s.getValue(), fieldEmpty.removeSuffix());
             return fieldName + " = NULL";
         }).collect(Collectors.joining(", "));
         stringBuilder.append(collect).append(" where ");
@@ -87,7 +88,7 @@ public class FieldEmptyHandle extends BaseStrengthen {
         }
         for (Parameter parameter : parameters) {
             ParamAnnotation generate = ParamAnnotation.generate(parameter);
-            String fieldName = getFieldName(codeStandardEnum, generate.value, softDelect.removeSuffix());
+            String fieldName = tableAlias + "." + getFieldName(codeStandardEnum, generate.value, fieldEmpty.removeSuffix());
             // 判断是否是列表
             if (MapperStrongUtils.isListTypeClass(parameter.getType())) {
                 stringBuilder.append(fieldName).append(" in <foreach item='item' collection='").append(generate.value).append("' open='(' separator=',' close=')'>#{item}</foreach> ").append(generate.oan.getValue()).append(" ");

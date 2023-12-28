@@ -2,6 +2,8 @@ package cmc.mybatisc.utils.list;
 
 
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -83,5 +85,37 @@ public class ListUtil {
      */
     public static boolean isEmpty(List<?> list) {
         return list == null || list.isEmpty();
+    }
+
+    /**
+     * 遍历列表
+     *
+     * @param list     列表
+     * @param consumer 消费者
+     */
+    public static <T> void forEach(List<T> list, BiConsumer<T,Add<T>> consumer){
+        List<T> next = list;
+        while (true){
+            List<T> add = new ArrayList<>();
+            next.forEach(info->{
+                consumer.accept(info,e->add.addAll(Arrays.asList(e)));
+            });
+            if(add.isEmpty()){
+                return;
+            }
+            next = add;
+            list.addAll(add);
+        }
+    }
+
+    /**
+     * 新增
+     *
+     * @author 程梦城
+     * @version 1.0.0
+     * &#064;date  2023/12/29
+     */
+    public interface Add<T> {
+        void add(T... t);
     }
 }

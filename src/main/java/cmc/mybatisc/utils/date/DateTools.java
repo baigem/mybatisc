@@ -3,6 +3,7 @@ package cmc.mybatisc.utils.date;
 import lombok.SneakyThrows;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -51,4 +52,18 @@ public class DateTools {
         return new SimpleDateFormat(format.getFormat()).parse(date);
     }
 
+    /**
+     * 是同一天
+     *
+     * @param date1 日期1
+     * @param date2 日期2
+     * @return boolean
+     */
+    public static boolean isSameDay(Date date1, Date date2) {
+        // 将Date对象转换为LocalDate
+        LocalDate localDate1 = date1.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        LocalDate localDate2 = date2.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        // 使用isEqual方法判断两个LocalDate是否表示同一天
+        return localDate1.isEqual(localDate2);
+    }
 }

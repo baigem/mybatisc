@@ -1,10 +1,11 @@
-package cmc.mybatisc.inner;
+package cmc.mybatisc.base.service;
 
 import cmc.mybatisc.utils.PageUtils;
 import cmc.mybatisc.utils.reflect.GenericType;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.map.MapUtil;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -16,9 +17,9 @@ import java.util.stream.Collectors;
  *
  * @author 程梦城
  * @version 1.0.0
- * &#064;date  2023/07/07
+ * &#064;date  2023/12/28
  */
-public interface BaseFill<F, E, K, P> {
+public interface BaseFill<F,D, P,K extends Serializable>{
     /**
      * 获取数据映射
      * this.listToMap(ids, this::listByIds, ProducePaintStockLog::getId);
@@ -27,24 +28,25 @@ public interface BaseFill<F, E, K, P> {
      * @param ids 身份证
      * @return {@link Map}<{@link ?}, {@link F}>
      */
-    default Map<K, E> getDataMap(List<K> ids) {
+    default Map<K, D> getDataMap(List<K> ids) {
         return this.getDataMap(ids, null);
     }
 
-    Map<K, E> getDataMap(List<K> ids, P p);
+    Map<K, D> getDataMap(List<K> ids, P p);
 
-    default Map<K, List<E>> getDataListMap(List<K> mainids) {
+    default Map<K, List<D>> getDataListMap(List<K> mainids) {
         return this.getDataListMap(mainids, null);
     }
 
     /**
      * 获取数据列表映射
-     * 获取数据映射
      *
      * @param mainids 忽略
-     * @return {@link Map}<{@link K}, {@link List}<{@link E}>>
+     * @param p       p
+     * @return {@link Map}<{@link ?} {@link extends} {@link K}, {@link List}<{@link D}>>
      */
-    default Map<K, List<E>> getDataListMap(List<K> mainids, P p) {
+    default Map<K, List<D>> getDataListMap(List<K> mainids, P p) {
+        List<Long> mainids1 = (List<Long>) mainids;
         throw new RuntimeException("请重写接口后调用");
     }
 
@@ -55,19 +57,19 @@ public interface BaseFill<F, E, K, P> {
      * @param getKey   获取密钥
      * @param setValue 设置值
      */
-    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, E> setValue) {
+    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, D> setValue) {
         this.fillExternalModel(list, MapUtil.of(getKey, setValue), null);
     }
 
-    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, E> setValue, P p) {
+    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, D> setValue, P p) {
         this.fillExternalModel(list, MapUtil.of(getKey, setValue), null, p);
     }
 
-    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, E> setValue, Function<E, K> getDataId) {
+    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, D> setValue, Function<D, K> getDataId) {
         this.fillExternalModel(list, MapUtil.of(getKey, setValue), getDataId);
     }
 
-    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, E> setValue, Function<E, K> getDataId, P type) {
+    default <S> void fillExternalModel(List<S> list, Function<S, K> getKey, BiConsumer<S, D> setValue, Function<D, K> getDataId, P type) {
         this.fillExternalModel(list, MapUtil.of(getKey, setValue), getDataId, type);
     }
 
@@ -77,11 +79,11 @@ public interface BaseFill<F, E, K, P> {
      * @param list 列表
      * @param map  地图
      */
-    default <S> void fillExternalModel(List<S> list, Map<Function<S, K>, BiConsumer<S, E>> map, Function<E, K> getDataId) {
+    default <S> void fillExternalModel(List<S> list, Map<Function<S, K>, BiConsumer<S, D>> map, Function<D, K> getDataId) {
         list.forEach(this.fillExternalModelUseCallback(list, map, getDataId));
     }
 
-    default <S> void fillExternalModel(List<S> list, Map<Function<S, K>, BiConsumer<S, E>> map, Function<E, K> getDataId, P type) {
+    default <S> void fillExternalModel(List<S> list, Map<Function<S, K>, BiConsumer<S, D>> map, Function<D, K> getDataId, P type) {
         list.forEach(this.fillExternalModelUseCallback(list, map, getDataId, type));
     }
 
@@ -92,31 +94,31 @@ public interface BaseFill<F, E, K, P> {
      * @param getKey   获取密钥
      * @param setValue 设置值
      */
-    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<E>> setValue) {
+    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<D>> setValue) {
         this.fillExternalModelSubData(list, MapUtil.of(getKey, setValue));
     }
 
-    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<E>> setValue, Function<E, K> getDataId) {
+    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<D>> setValue, Function<D, K> getDataId) {
         this.fillExternalModelSubData(list, MapUtil.of(getKey, setValue), getDataId);
     }
 
-    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<E>> setValue, P p) {
+    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<D>> setValue, P p) {
         this.fillExternalModelSubData(list, MapUtil.of(getKey, setValue), null, p);
     }
 
-    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<E>> setValue, Function<E, K> getDataId, P p) {
+    default <S> void fillExternalModelSubData(List<S> list, Function<S, K> getKey, BiConsumer<S, List<D>> setValue, Function<D, K> getDataId, P p) {
         this.fillExternalModelSubData(list, MapUtil.of(getKey, setValue), getDataId, p);
     }
 
-    default <S> void fillExternalModelSubData(List<S> list, Map<Function<S, K>, BiConsumer<S, List<E>>> map) {
+    default <S> void fillExternalModelSubData(List<S> list, Map<Function<S, K>, BiConsumer<S, List<D>>> map) {
         list.forEach(this.fillExternalModelSubDataUseCallback(list, map));
     }
 
-    default <S> void fillExternalModelSubData(List<S> list, Map<Function<S, K>, BiConsumer<S, List<E>>> map, Function<E, K> getDataId) {
+    default <S> void fillExternalModelSubData(List<S> list, Map<Function<S, K>, BiConsumer<S, List<D>>> map, Function<D, K> getDataId) {
         list.forEach(this.fillExternalModelSubDataUseCallback(list, map, getDataId));
     }
 
-    default <S> void fillExternalModelSubData(List<S> list, Map<Function<S, K>, BiConsumer<S, List<E>>> map, Function<E, K> getDataId, P p) {
+    default <S> void fillExternalModelSubData(List<S> list, Map<Function<S, K>, BiConsumer<S, List<D>>> map, Function<D, K> getDataId, P p) {
         list.forEach(this.fillExternalModelSubDataUseCallback(list, map, getDataId, p));
     }
 
@@ -128,26 +130,31 @@ public interface BaseFill<F, E, K, P> {
      * @param setValue 设置值
      * @return {@link Consumer}<{@link S}>
      */
-    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Function<S, K> getKey, BiConsumer<S, E> setValue) {
+    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Function<S, K> getKey, BiConsumer<S, D> setValue) {
         return this.fillExternalModelUseCallback(list, MapUtil.of(getKey, setValue), null, null);
     }
 
-    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, E>> map) {
+    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, D>> map) {
         return this.fillExternalModelUseCallback(list, map, null, null);
     }
 
-    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, E>> map, Function<E, K> getDataId) {
+    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, D>> map, Function<D, K> getDataId) {
         return this.fillExternalModelUseCallback(list, map, getDataId, null);
     }
 
-    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, E>> map, Function<E, K> getDataId, P type) {
+    default <S> Consumer<S> fillExternalModelUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, D>> map, Function<D, K> getDataId, P type) {
         // 进行过滤去重
         List<K> ids = list.stream().flatMap(info -> map.keySet().stream().map(getKey -> getKey.apply(info))).filter(Objects::nonNull).distinct().collect(Collectors.toList());
         if (ids.isEmpty()) {
             return e -> {
             };
         }
-        Map<K, E> dataMap = Optional.ofNullable(getDataId).map(get -> this.getDataMap(ids, type).values().stream().collect(Collectors.toMap(get, e -> e))).orElseGet(() -> this.getDataMap(ids, type));
+        final Map<K, D> dataMap;
+        if(getDataId != null){
+            dataMap = this.getDataMap(ids, type).values().stream().collect(Collectors.toMap(getDataId, d -> d));
+        }else{
+            dataMap = this.getDataMap(ids, type);
+        }
         return info -> {
             map.forEach((key, value) -> {
                 value.accept(info, dataMap.get(key.apply(info)));
@@ -163,7 +170,7 @@ public interface BaseFill<F, E, K, P> {
      * @param setValue 设置值
      * @return {@link Consumer}<{@link S}>
      */
-    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Function<S, K> getKey, BiConsumer<S, List<E>> setValue) {
+    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Function<S, K> getKey, BiConsumer<S, List<D>> setValue) {
         return this.fillExternalModelSubDataUseCallback(list, MapUtil.of(getKey, setValue));
     }
 
@@ -174,21 +181,26 @@ public interface BaseFill<F, E, K, P> {
      * @param map  地图
      * @return {@link Consumer}<{@link S}>
      */
-    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, List<E>>> map) {
+    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, List<D>>> map) {
         return this.fillExternalModelSubDataUseCallback(list, map, null, null);
     }
 
-    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, List<E>>> map, Function<E, K> getDataId) {
+    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, List<D>>> map, Function<D, K> getDataId) {
         return this.fillExternalModelSubDataUseCallback(list, map, getDataId, null);
     }
 
-    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, List<E>>> map, Function<E, K> getDataId, P type) {
+    default <S> Consumer<S> fillExternalModelSubDataUseCallback(List<S> list, Map<Function<S, K>, BiConsumer<S, List<D>>> map, Function<D, K> getDataId, P type) {
         List<K> ids = list.stream().flatMap(info -> map.keySet().stream().map(getKey -> getKey.apply(info))).filter(Objects::nonNull).distinct().collect(Collectors.toList());
         if (ids.isEmpty()) {
             return e -> {
             };
         }
-        Map<K, List<E>> dataMap = Optional.ofNullable(getDataId).map(get -> this.getDataListMap(ids, type).values().stream().flatMap(Collection::stream).collect(Collectors.groupingBy(getDataId))).orElseGet(() -> this.getDataListMap(ids, type));
+        final Map<K, List<D>> dataMap;
+        if(getDataId == null){
+            dataMap = this.getDataListMap(ids, type);
+        }else{
+            dataMap = this.getDataListMap(ids, type).values().stream().flatMap(Collection::stream).collect(Collectors.groupingBy(getDataId));
+        }
         return info -> {
             map.forEach((key, value) -> {
                 value.accept(info, Optional.ofNullable(dataMap.get(key.apply(info))).orElse(Collections.emptyList()));
@@ -254,57 +266,58 @@ public interface BaseFill<F, E, K, P> {
      */
     <R extends F> List<R> fill(List<R> list,P parameter);
 
-    default Map<K, List<E>> listToListMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey) {
+    default <R> Map<K, List<D>> listToListMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey) {
         return this.listToListMap(ids, get, getKey, true);
     }
 
-    default Map<K, List<E>> listToListMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey, boolean isFill) {
+    default <R> Map<K, List<D>> listToListMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey, boolean isFill) {
         return this.listToListMap(ids, get, getKey, isFill,null);
     }
-    default Map<K, List<E>> listToListMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey, P p) {
+    default <R> Map<K, List<D>> listToListMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey, P p) {
         return this.listToListMap(ids, get, getKey, true,p);
     }
-    default Map<K, List<E>> listToListMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey, boolean isFill,P p) {
-        List<E> es = this.of(ids, get, isFill,p);
-        return es.stream().collect(Collectors.groupingBy(getKey));
+    default <R> Map<K, List<D>> listToListMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey, boolean isFill, P p) {
+        List<D> ds = this.of(ids, get, isFill,p);
+        return ds.stream().collect(Collectors.groupingBy(getKey));
     }
 
-    default Map<K, E> listToMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey) {
+    default <R> Map<K, D> listToMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey) {
         return this.listToMap(ids, get, getKey, true);
     }
 
-    default Map<K, E> listToMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey, boolean isFill) {
+    default <R> Map<K, D> listToMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey, boolean isFill) {
         return this.listToMap(ids, get,getKey, isFill,null);
     }
-    default Map<K, E> listToMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey, P p) {
+    default <R> Map<K, D> listToMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey, P p) {
         return this.listToMap(ids, get,getKey, true,p);
     }
-    default Map<K, E> listToMap(List<K> ids, Function<List<K>, List<?>> get, Function<E, K> getKey, boolean isFill,P p) {
-        List<E> es = this.of(ids, get, isFill,p);
-        return es.stream().collect(Collectors.toMap(getKey, e -> e));
+    default <R> Map<K, D> listToMap(List<K> ids, Function<List<K>, List<R>> get, Function<D, K> getKey, boolean isFill, P p) {
+        List<D> ds = this.of(ids, get, isFill,p);
+        return ds.stream().collect(Collectors.toMap(getKey, d -> d));
     }
 
     @SuppressWarnings("unchecked")
-    default List<E> of(List<K> ids, Function<List<K>, List<?>> get, boolean isFill,P p) {
+    default <R> List<D> of(List<K> ids, Function<List<K>, List<R>> get, boolean isFill, P p) {
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
-        List<?> apply = get.apply(ids);
+        List<R> apply = get.apply(ids);
         // 获取泛型
         GenericType genericType = GenericType.forClass(this.getClass());
-        Class<?> fillClass = genericType.get(BaseFill.class, 0);
-        Class<?> aClass = genericType.get(BaseFill.class, 1);
+        Class<?> fillClass = genericType.get(BaseFill.class, "F");
+        Class<?> aClass = genericType.get(BaseFill.class, "D");
         if (apply.isEmpty()) {
             return Collections.emptyList();
         }
-        List<E> list;
+        List<D> list;
         Object o = apply.get(0);
-        if (o.getClass() == aClass) {
-            list = (List<E>) apply;
+        // 进行自动类型转换
+        if (aClass.isAssignableFrom(o.getClass())) {
+            list = (List<D>) apply;
         } else {
-            list = (List<E>) BeanUtil.copyToList(apply, aClass);
+            list = (List<D>) BeanUtil.copyToList(apply, aClass);
         }
-        if (isFill && aClass.getSuperclass() == fillClass) {
+        if (isFill && fillClass.isAssignableFrom(aClass)) {
             this.fill((List<? extends F>) list,p);
         }
         return list;

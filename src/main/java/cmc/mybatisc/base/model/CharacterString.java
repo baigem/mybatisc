@@ -1,4 +1,4 @@
-package cmc.mybatisc.base;
+package cmc.mybatisc.base.model;
 
 import java.io.Serializable;
 

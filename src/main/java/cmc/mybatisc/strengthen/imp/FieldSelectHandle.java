@@ -64,6 +64,8 @@ public class FieldSelectHandle extends BaseStrengthen {
         FieldSelect fieldSelect = method.getAnnotation(FieldSelect.class);
         // 表名
         String table = MapperStrongUtils.getTableName(this.mapperParser.getEntityParser().getTableName(), fieldSelect.table());
+        String tableAlias = this.mapperParser.getEntityParser().getTableAlias();
+
         if (!StringUtils.hasText(table)) {
             throw new IllegalArgumentException("table name is not empty");
         }
@@ -76,7 +78,7 @@ public class FieldSelectHandle extends BaseStrengthen {
         if (returnType == Integer.class || returnType == Long.class || returnType == int.class || returnType == long.class) {
             fieldName = "count(*)";
         }
-        sql.append("<script> select ").append(fieldName).append(" from ").append(table).append(" <where> ");
+        sql.append("<script> select ").append(fieldName).append(" from ").append(table).append(" as ").append(tableAlias).append(" <where> ");
         // 添加逻辑删除
         sql.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getEntityParser(),"",""));
 
@@ -91,7 +93,7 @@ public class FieldSelectHandle extends BaseStrengthen {
             if (param.sort) {
                 sortList.add(param);
             }
-            String field = SqlUtils.packageField(getFieldName(codeStandardEnum, param.value, fieldSelect.removeSuffix()));
+            String field = tableAlias + "." + SqlUtils.packageField(getFieldName(codeStandardEnum, param.value, fieldSelect.removeSuffix()));
             if (MapperStrongUtils.isListTypeClass(parameter.getType())) {
                 if (fieldSelect.allowNull() || param.isNull) {
                     if (param.isNull) {
@@ -158,7 +160,7 @@ public class FieldSelectHandle extends BaseStrengthen {
         if (!sortList.isEmpty()) {
             sql.append("ORDER BY ");
             for (ParamAnnotation paramAnnotation : sortList) {
-                String field = SqlUtils.packageField(getFieldName(codeStandardEnum, paramAnnotation.value, fieldSelect.removeSuffix()));
+                String field = tableAlias + "." + SqlUtils.packageField(getFieldName(codeStandardEnum, paramAnnotation.value, fieldSelect.removeSuffix()));
                 final String s = "%s %s";
                 sql.append(String.format(s, field, paramAnnotation.sortRule)).append(", ");
             }

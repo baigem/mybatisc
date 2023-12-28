@@ -1,4 +1,4 @@
-package cmc.mybatisc.inner;
+package cmc.mybatisc.base.service;
 
 import cmc.mybatisc.utils.list.ListUtil;
 import com.alibaba.fastjson2.JSON;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * @version 1.0.0
  * &#064;date  2023/12/24
  */
-public interface IServiceStrengthen<B extends BaseMapper<T>, T> extends IService<T> {
+public interface BaseService<B extends BaseMapper<T>, T> extends IService<T> {
     @Override
     B getBaseMapper();
 

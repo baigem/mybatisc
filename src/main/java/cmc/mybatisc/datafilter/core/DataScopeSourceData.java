@@ -2,7 +2,7 @@ package cmc.mybatisc.datafilter.core;
 
 import cmc.mybatisc.annotation.DataScope;
 import cmc.mybatisc.annotation.Join;
-import cmc.mybatisc.base.BaseDict;
+import cmc.mybatisc.base.model.BaseDict;
 import cn.hutool.core.util.ReflectUtil;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

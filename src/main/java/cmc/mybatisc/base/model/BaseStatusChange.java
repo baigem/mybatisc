@@ -1,4 +1,4 @@
-package cmc.mybatisc.base;
+package cmc.mybatisc.base.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

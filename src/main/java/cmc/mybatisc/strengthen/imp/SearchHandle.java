@@ -62,7 +62,6 @@ public class SearchHandle extends BaseStrengthen {
         SearchParser searchParser = new SearchParser(method.getAnnotation(Search.class), method, this.mapperParser);
         // 表名
         String table = searchParser.getTable();
-
         String fieldName = String.join(",", searchParser.getDisplayField());
 
         Class<?> returnType = method.getReturnType();

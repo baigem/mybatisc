@@ -3,7 +3,6 @@ package cmc.mybatisc.parser;
 import cmc.mybatisc.annotation.Search;
 import cmc.mybatisc.annotation.SearchField;
 import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.DelFlag;
 import cmc.mybatisc.model.QueryFieldCriteria;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,6 +31,9 @@ public class SearchParser {
      * 查询表
      */
     private String table;
+    /**
+     * 表别名
+     */
     private String tableAlias;
     /**
      * 关联查询
@@ -69,8 +71,14 @@ public class SearchParser {
      */
     private String mappingField;
 
+    /**
+     * 参数解析器列表
+     */
     private List<SearchParameterParser> parameterParserList = new ArrayList<>();
 
+    /**
+     * 映射器解析器
+     */
     private MapperParser mapperParser;
 
     public SearchParser(Search search, Method method, MapperParser mapperParser) {
