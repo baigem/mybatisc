@@ -2,6 +2,7 @@ package cmc.mybatisc.base.service;
 
 import cmc.mybatisc.utils.PageUtils;
 import cmc.mybatisc.utils.reflect.GenericType;
+import cmc.mybatisc.utils.sugar.If;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.map.MapUtil;
 
@@ -46,7 +47,6 @@ public interface BaseFill<F,D, P,K extends Serializable>{
      * @return {@link Map}<{@link ?} {@link extends} {@link K}, {@link List}<{@link D}>>
      */
     default Map<K, List<D>> getDataListMap(List<K> mainids, P p) {
-        List<Long> mainids1 = (List<Long>) mainids;
         throw new RuntimeException("请重写接口后调用");
     }
 
@@ -150,10 +150,19 @@ public interface BaseFill<F,D, P,K extends Serializable>{
             };
         }
         final Map<K, D> dataMap;
+
         if(getDataId != null){
-            dataMap = this.getDataMap(ids, type).values().stream().collect(Collectors.toMap(getDataId, d -> d));
+            if(type == null){
+                dataMap = this.getDataMap(ids).values().stream().collect(Collectors.toMap(getDataId, d -> d));
+            }else{
+                dataMap = this.getDataMap(ids, type).values().stream().collect(Collectors.toMap(getDataId, d -> d));
+            }
         }else{
-            dataMap = this.getDataMap(ids, type);
+            if(type == null){
+                dataMap = this.getDataMap(ids);
+            }else{
+                dataMap = this.getDataMap(ids, type);
+            }
         }
         return info -> {
             map.forEach((key, value) -> {
@@ -197,9 +206,17 @@ public interface BaseFill<F,D, P,K extends Serializable>{
         }
         final Map<K, List<D>> dataMap;
         if(getDataId == null){
-            dataMap = this.getDataListMap(ids, type);
+            if(type == null){
+                dataMap = this.getDataListMap(ids);
+            }else{
+                dataMap = this.getDataListMap(ids, type);
+            }
         }else{
-            dataMap = this.getDataListMap(ids, type).values().stream().flatMap(Collection::stream).collect(Collectors.groupingBy(getDataId));
+            if(type == null){
+                dataMap = this.getDataListMap(ids).values().stream().flatMap(Collection::stream).collect(Collectors.groupingBy(getDataId));
+            }else{
+                dataMap = this.getDataListMap(ids, type).values().stream().flatMap(Collection::stream).collect(Collectors.groupingBy(getDataId));
+            }
         }
         return info -> {
             map.forEach((key, value) -> {

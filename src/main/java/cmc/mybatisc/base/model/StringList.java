@@ -15,6 +15,7 @@ import lombok.*;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,6 +49,11 @@ public class StringList<T extends Serializable> extends ArrayList<T> implements 
         this.addAll(list);
     }
 
+    public StringList(T... array) {
+        super(array.length);
+        this.addAll(Arrays.asList(array));
+    }
+
     public StringList(String values, Class<T> first) {
         if(values == null) return;
         if(values.startsWith("[") && values.endsWith("]")){
@@ -63,6 +69,15 @@ public class StringList<T extends Serializable> extends ArrayList<T> implements 
         super.addAll(list.stream().map(e->JSON.parseObject(e,first)).collect(Collectors.toList()));
     }
 
+    /**
+     * 单例列表
+     *
+     * @param o o
+     * @return {@link StringList}<{@link T}>
+     */
+    public static <T extends Serializable> StringList<T> singletonList(T o){
+        return new StringList<>(o);
+    }
     /**
      * 或转换
      *
