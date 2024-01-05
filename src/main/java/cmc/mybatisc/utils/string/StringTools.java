@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  * @version 1.0.0
  * &#064;date  2023/12/09
  */
-public class StringUtils{
+public class StringTools {
     private static final int STRING_BUILDER_SIZE = 256;
     public static final String SPACE = " ";
     public static final String EMPTY = "";
@@ -24,6 +24,13 @@ public class StringUtils{
     public static final int INDEX_NOT_FOUND = -1;
     private static final int PAD_LIMIT = 8192;
 
+    /**
+     * 连接字符串
+     * @return {@link String}
+     */
+    public static String concat(String... strings){
+        return String.join("",strings);
+    }
     /**
      * 空字符串
      */

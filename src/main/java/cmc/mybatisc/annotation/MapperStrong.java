@@ -1,7 +1,7 @@
 package cmc.mybatisc.annotation;
 
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.DelFlag;
+import cmc.mybatisc.config.interfaces.TableEntity;
+import cmc.mybatisc.core.util.TableStructure;
 
 import java.lang.annotation.*;
 
@@ -16,25 +16,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
 public @interface MapperStrong {
-
-    /**
-     * 表名
-     */
-    String name() default "";
-
     /**
      * 表结构对应的实体entity类
      *
      * @return {@link Class}<{@link ?}>
      */
-    Class<?> value() default Class.class;
-
-    /**
-     * 类型
-     *
-     * @return {@link CodeStandardEnum}
-     */
-    CodeStandardEnum nameMode() default CodeStandardEnum.UNDERLINE;
+    Class<? extends TableEntity> value() default TableEntity.class;
 
     /**
      * 忽略字段

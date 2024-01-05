@@ -1,8 +1,9 @@
 package cmc.mybatisc.utils;
 
 import cmc.mybatisc.annotation.FieldSelect;
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.TableEntity;
+import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
+import cmc.mybatisc.config.interfaces.NameConversion;
 import cmc.mybatisc.utils.reflect.GenericType;
 import cmc.mybatisc.utils.reflect.ReflectUtils;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -27,6 +28,7 @@ import java.util.*;
  */
 public class MapperStrongUtils {
     public static String create(SqlSession sqlSession, Class<?> mapper, Method method, String sql) {
+        MybatiscConfig config = MybatisScannerConfigurer.getBeanFactory().getBean(MybatiscConfig.class);
         FieldSelect annotation = method.getAnnotation(FieldSelect.class);
         GenericType genericType = GenericType.forMethod(mapper, method);
         Class<?> returnType = genericType.last(method.getReturnType());
@@ -45,10 +47,10 @@ public class MapperStrongUtils {
         Class<?> returnTypeClassBottom = genericType.last(method.getReturnType());
 
         // 遍历进行映射，防止mybatis每次都自动映射，浪费性能
-        CodeStandardEnum handler = annotation != null ? annotation.nameMode() : CodeStandardEnum.UNDERLINE;
+        NameConversion nameConversion = config.getNameConversion();
         for (Field declaredField : ReflectUtils.getAllField(returnTypeClassBottom)) {
             try {
-                ResultMapping build = new ResultMapping.Builder(sqlSession.getConfiguration(), declaredField.getName(), handler.handler(declaredField.getName()), declaredField.getType()).build();
+                ResultMapping build = new ResultMapping.Builder(sqlSession.getConfiguration(), declaredField.getName(), nameConversion.conversionFieldName(declaredField,declaredField.getName()), declaredField.getType()).build();
                 objects.add(build);
             } catch (Exception ignore) {
             }
@@ -61,14 +63,6 @@ public class MapperStrongUtils {
         return id;
     }
 
-    public static Type[] getType(Method method) {
-        Type type = method.getGenericReturnType();
-        if (type instanceof ParameterizedTypeImpl) {
-            return ((ParameterizedTypeImpl) type).getActualTypeArguments();
-        }
-        return new Type[]{};
-    }
-
     /**
      * 判断指定类是否是List的子类
      *
@@ -77,7 +71,7 @@ public class MapperStrongUtils {
      */
     public static boolean isListTypeClass(Class<?> clz) {
         try {
-            if (clz == List.class || clz == Set.class || clz.getName().equals("[Ljava.lang.Long;")) {
+            if (Collection.class.isAssignableFrom(clz) || clz.getName().startsWith("[Ljava")) {
                 return true;
             }
             return clz.newInstance() instanceof Collection;
@@ -94,6 +88,7 @@ public class MapperStrongUtils {
      * @return {@link String}
      */
     public static String getTableName(Class<?> entity, String name) {
+        MybatiscConfig config = MybatisScannerConfigurer.getBeanFactory().getBean(MybatiscConfig.class);
         TableName tableName = entity.getAnnotation(TableName.class);
         if (tableName != null && StringUtils.hasText(tableName.value())) {
             return tableName.value();
@@ -101,7 +96,7 @@ public class MapperStrongUtils {
         if (StringUtils.hasText(name)) {
             return name;
         }
-        return CodeStandardEnum.UNDERLINE.handler(entity.getSimpleName());
+        return config.getNameConversion().conversionTableName(entity,entity.getSimpleName());
     }
 
     /**
@@ -137,7 +132,7 @@ public class MapperStrongUtils {
      * @param entity 实体
      * @return {@link List}<{@link String}>
      */
-    public static List<String> getFieldNames(Class<?> entity, CodeStandardEnum codeStandardEnum) {
+    public static List<String> getFieldNames(Class<?> entity, NameConversion nameConversion) {
         List<String> list = new ArrayList<>();
         List<Field> declaredFields = ReflectUtils.getAllField(entity);
         for (Field declaredField : declaredFields) {
@@ -160,7 +155,7 @@ public class MapperStrongUtils {
                 continue;
             }
             // 把字段名当做表名称
-            list.add(codeStandardEnum.handler(declaredField.getName()));
+            list.add(nameConversion.conversionFieldName(declaredField, declaredField.getName()));
         }
         return list;
     }

@@ -1,7 +1,5 @@
 package cmc.mybatisc.annotation;
 
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.DelFlag;
 import cmc.mybatisc.config.interfaces.TableEntity;
 
 import java.lang.annotation.ElementType;
@@ -27,11 +25,6 @@ public @interface SoftDelete {
      * 查询字段
      */
     String value() default "";
-
-    /**
-     * 类型
-     */
-    CodeStandardEnum nameMode() default CodeStandardEnum.UNDERLINE;
 
     /**
      * 移除

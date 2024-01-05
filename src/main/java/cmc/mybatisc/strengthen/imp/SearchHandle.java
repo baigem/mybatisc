@@ -3,7 +3,6 @@ package cmc.mybatisc.strengthen.imp;
 import cmc.mybatisc.annotation.Search;
 import cmc.mybatisc.config.DelFlagConfig;
 import cmc.mybatisc.config.MybatisScannerConfigurer;
-import cmc.mybatisc.config.interfaces.DelFlag;
 import cmc.mybatisc.model.FieldSelectDataSource;
 import cmc.mybatisc.model.QueryFieldCriteria;
 import cmc.mybatisc.parser.JoinParser;
@@ -12,7 +11,6 @@ import cmc.mybatisc.parser.SqlParser;
 import cmc.mybatisc.strengthen.BaseStrengthen;
 import cmc.mybatisc.utils.MapperStrongUtils;
 import cmc.mybatisc.utils.SqlUtils;
-import cn.hutool.extra.spring.SpringUtil;
 import org.apache.ibatis.session.SqlSession;
 
 import java.io.Serializable;
@@ -59,7 +57,7 @@ public class SearchHandle extends BaseStrengthen {
         SqlParser sqlParser = new SqlParser();
         Map<String, Function<?, Serializable>> dy = sqlParser.getParameters();
         DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
-        SearchParser searchParser = new SearchParser(method.getAnnotation(Search.class), method, this.mapperParser);
+        SearchParser searchParser = new SearchParser(this.mybatiscConfig, method, this.mapperParser);
         // 表名
         String table = searchParser.getTable();
         String fieldName = String.join(",", searchParser.getDisplayField());
@@ -74,18 +72,18 @@ public class SearchHandle extends BaseStrengthen {
         // 生成join
         for (JoinParser join : searchParser.getJoinParserList()) {
             sql.append(" ").append(join.getJoinType()).append(" join ")
-                    .append(join.getTable()).append(" ")
+                    .append(join.getJoinTable()).append(" ")
                     .append(join.getTableAlias()).append(" on ")
-                    .append(join.getTableAlias()).append(".").append(SqlUtils.packageField(join.getField())).append(" = ")
-                    .append(join.getLinkTableAlias()).append(".").append(join.getLinkField());
+                    .append(join.getTableAlias()).append(".").append(SqlUtils.packageField(join.getJoinField())).append(" = ")
+                    .append(join.getLinkTableAlias()).append(".").append(join.getOnField());
         }
         sql.append(" <where> ");
         for (JoinParser joinParser : searchParser.getJoinParserList()) {
             // 添加逻辑删除
-            sql.append(delFlagConfig.generateSelectSql(dy,joinParser.getEntityParser(),"",""));
+            sql.append(delFlagConfig.generateSelectSql(dy,joinParser.getJoinTableStructure(),"",""));
         }
         // 添加逻辑删除
-        sql.append(delFlagConfig.generateSelectSql(dy,searchParser.getMapperParser().getEntityParser(),"",""));
+        sql.append(delFlagConfig.generateSelectSql(dy,searchParser.getMapperParser().getTableStructure(),"",""));
         // 需要进行查询的字段集合
         List<QueryFieldCriteria> parameterList = QueryFieldCriteria.buildBySearch(searchParser);
         if (!parameterList.isEmpty()) {

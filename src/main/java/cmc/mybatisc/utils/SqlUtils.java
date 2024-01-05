@@ -6,7 +6,7 @@ import cmc.mybatisc.base.model.StringList;
 import cmc.mybatisc.model.QueryFieldCriteria;
 import cmc.mybatisc.parser.SearchParser;
 import cmc.mybatisc.utils.map.MapUtil;
-import cmc.mybatisc.utils.string.StringUtils;
+import cmc.mybatisc.utils.string.StringTools;
 
 import java.util.Date;
 import java.util.List;
@@ -82,7 +82,7 @@ public class SqlUtils {
         StringBuilder sql = new StringBuilder();
         sql.append("ORDER BY ");
         for (QueryFieldCriteria queryFieldCriteria : list) {
-            sql.append(StringUtils.template("${alias}.${fieldName} ${sortRule}", queryFieldCriteria)).append(", ");
+            sql.append(StringTools.template("${alias}.${fieldName} ${sortRule}", queryFieldCriteria)).append(", ");
         }
         return sql.toString().replaceAll(", $", "");
     }
@@ -100,7 +100,7 @@ public class SqlUtils {
         StringBuilder sql = new StringBuilder();
         sql.append("GROUP BY ");
         for (QueryFieldCriteria queryFieldCriteria : groupList) {
-            sql.append(StringUtils.template("${alias}.${fieldName} ${sortRule}", queryFieldCriteria)).append(", ");
+            sql.append(StringTools.template("${alias}.${fieldName} ${sortRule}", queryFieldCriteria)).append(", ");
         }
         return sql.toString().replaceAll(", $", "");
     }
@@ -113,14 +113,14 @@ public class SqlUtils {
      */
     public static String generateNumberIfSql(QueryFieldCriteria queryFieldCriteria) {
         StringBuilder sql = new StringBuilder();
-        sql.append(StringUtils.template("<if test=\"${fullName} != null\">\n", queryFieldCriteria));
+        sql.append(StringTools.template("<if test=\"${fullName} != null\">\n", queryFieldCriteria));
         sql.append("                ").append(queryFieldCriteria.isAnd() ? "and" : "or");
         if (queryFieldCriteria.isLike()) {
-            sql.append(StringUtils.template(" ${alias}.${fieldName} like concat('%',#{${fullName}},'%')\n", queryFieldCriteria));
+            sql.append(StringTools.template(" ${alias}.${fieldName} like concat('%',#{${fullName}},'%')\n", queryFieldCriteria));
         } else if (queryFieldCriteria.isRange()) {
-            sql.append(StringUtils.template(" ${alias}.${fieldName} between #{${fullName}} and #{${endName}}\n", queryFieldCriteria));
+            sql.append(StringTools.template(" ${alias}.${fieldName} between #{${fullName}} and #{${endName}}\n", queryFieldCriteria));
         } else {
-            sql.append(StringUtils.template(" ${alias}.${fieldName} ${compare} #{${fullName}}\n", queryFieldCriteria));
+            sql.append(StringTools.template(" ${alias}.${fieldName} ${compare} #{${fullName}}\n", queryFieldCriteria));
         }
         sql.append("            </if>");
         return sql.toString();
@@ -132,14 +132,14 @@ public class SqlUtils {
      */
     public static String generateStringIfSql(QueryFieldCriteria queryFieldCriteria) {
         StringBuilder sql = new StringBuilder();
-        sql.append(StringUtils.template("<if test=\"${fullName} != null and ${fullName} != ''\">\n", queryFieldCriteria));
+        sql.append(StringTools.template("<if test=\"${fullName} != null and ${fullName} != ''\">\n", queryFieldCriteria));
         sql.append("                ").append(queryFieldCriteria.isAnd() ? "and" : "or");
         if (queryFieldCriteria.isLike()) {
-            sql.append(StringUtils.template(" ${alias}.${fieldName} like concat('%',#{${fullName}},'%')\n", queryFieldCriteria));
+            sql.append(StringTools.template(" ${alias}.${fieldName} like concat('%',#{${fullName}},'%')\n", queryFieldCriteria));
         } else if (queryFieldCriteria.isRange()) {
-            sql.append(StringUtils.template(" ${alias}.${fieldName} between #{${fullName}} and #{${endName}}\n", queryFieldCriteria));
+            sql.append(StringTools.template(" ${alias}.${fieldName} between #{${fullName}} and #{${endName}}\n", queryFieldCriteria));
         } else {
-            sql.append(StringUtils.template(" ${alias}.${fieldName} ${compare} #{${fullName}}\n", queryFieldCriteria));
+            sql.append(StringTools.template(" ${alias}.${fieldName} ${compare} #{${fullName}}\n", queryFieldCriteria));
         }
         sql.append("            </if>");
         return sql.toString();
@@ -156,7 +156,7 @@ public class SqlUtils {
         String and = queryFieldCriteria.isAnd() ? "and" : "or";
         Map<String, Object> map = MapUtil.toMap(queryFieldCriteria);
         map.put("andStr", and);
-        return StringUtils.template("<if test=\"${fullName} != null and ${fullName}.size() > 0\">\n" +
+        return StringTools.template("<if test=\"${fullName} != null and ${fullName}.size() > 0\">\n" +
                 "                <foreach collection=\"${fullName}\" index=\"index\" item=\"item\"\n" +
                 "                         open=\"${andStr} ${alias}.${fieldName} in (\"\n" +
                 "                         separator=\",\" close=\")\">\n" +
@@ -169,7 +169,7 @@ public class SqlUtils {
         String and = queryFieldCriteria.isAnd() ? "and" : "or";
         Map<String, Object> map = MapUtil.toMap(queryFieldCriteria);
         map.put("andStr", and);
-        return StringUtils.template("<if test=\"${fullName} != null and ${fullName}.size() > 0\">\n" +
+        return StringTools.template("<if test=\"${fullName} != null and ${fullName}.size() > 0\">\n" +
                 "                <foreach collection=\"${fullName}\" index=\"index\" item=\"item\"\n" +
                 "                         open=\"${andStr} \"\n" +
                 "                         separator=\"${andStr}\">\n" +
@@ -187,7 +187,7 @@ public class SqlUtils {
         String and = queryFieldCriteria.isAnd() ? "and" : "or";
         Map<String, Object> map = MapUtil.toMap(queryFieldCriteria);
         map.put("andStr", and);
-        return StringUtils.template("<choose>\n" +
+        return StringTools.template("<choose>\n" +
                 "                <!-- 范围查询 -->\n" +
                 "                <when test=\"${endName} != null and ${fullName} != null\">\n" +
                 "                    ${andStr} to_days(${alias}.${fieldName}) between to_days(#{${fullName}}) and to_days(#{${endName}})\n" +
@@ -231,11 +231,14 @@ public class SqlUtils {
     /**
      * 包裹字段
      */
-    public static String packageField(String field) {
-        if (field.startsWith("`") && field.endsWith("`")) {
-            return field;
+    public static String packageField(String str) {
+        String[] split = str.split("\\.");
+        for (int i = 0; i < split.length; i++) {
+            if (!(split[i].startsWith("`") && split[i].endsWith("`"))) {
+                split[i] = "`" + str + "`";
+            }
         }
-        return "`" + field + "`";
+        return String.join(".",str);
     }
 
 }

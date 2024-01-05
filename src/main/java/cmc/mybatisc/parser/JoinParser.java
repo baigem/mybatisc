@@ -1,7 +1,9 @@
 package cmc.mybatisc.parser;
 
 import cmc.mybatisc.annotation.Join;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
 import cmc.mybatisc.config.interfaces.TableEntity;
+import cmc.mybatisc.core.util.TableStructure;
 import lombok.Data;
 import org.springframework.util.StringUtils;
 
@@ -15,26 +17,30 @@ import org.springframework.util.StringUtils;
 @Data
 public class JoinParser {
     /**
+     * 名称转换
+     */
+    private MybatiscConfig mybatiscConfig;
+    /**
+     * 主表
+     */
+    private TableStructure mainTable;
+    /**
      * 源数据
      */
     private Join join;
 
     /**
-     * 关联的表
+     * 联接表
      */
-    private Class<?> table;
+    private Class<?> joinTable;
     /**
-     * 映射器解析器
+     * 联接表结构
      */
-    private EntityParser entityParser;
-    /**
-     * 表别名
-     */
-    private String tableAlias;
+    private TableStructure joinTableStructure;
     /**
      * 关联表的字段
      */
-    private String field;
+    private String joinField;
     /**
      * join的类型
      */
@@ -42,54 +48,53 @@ public class JoinParser {
     /**
      * 需要关联的表，默认主表
      */
-    private Class<?> linkTable;
+    private Class<?> onTable;
     /**
      * 链接表映射器解析器
      */
-    private EntityParser linkTableEntityParser;
-    /**
-     * 链接表别名
-     */
-    private String linkTableAlias;
+    private TableStructure onTableStructure;
+
     /**
      * 关联表的字段，默认是field
      */
-    private String linkField;
+    private String onField;
     /**
-     * 此表是否是返回数据的表
+     * 使用数据源
      */
-    private Boolean isDataScope;
+    private Boolean useDataSource;
 
-    public JoinParser(Join join, AliasParser aliasParser) {
-        this.parse(join, aliasParser);
+    public JoinParser(MybatiscConfig mybatiscConfig, TableStructure mainTable, Join join) {
+        this.mybatiscConfig = mybatiscConfig;
+        this.mainTable = mainTable;
+        this.join = join;
+        this.parse();
     }
 
-    private void parse(Join join, AliasParser aliasParser) {
+    private void parse() {
         // 开始解析数据
-        this.join = join;
-        this.table = join.table();
-        this.field = join.field();
+        this.joinTable = join.joinTable();
+        this.joinField = this.mybatiscConfig.getNameConversion().conversionFieldName(null,join.joinField());
         this.joinType = join.joinType();
-        this.linkTable = join.linkTable();
-        this.linkField = join.linkField();
-        this.isDataScope = join.isDataScope();
-        if (!StringUtils.hasText(this.linkField)) {
-            this.linkField = this.field;
+        // 复用主表
+        if(join.onTable() == TableEntity.class){
+            this.onTable = this.mainTable.getEntity();
+        }else{
+            this.onTable = join.onTable();
         }
-        if (this.linkTable == TableEntity.class) {
-            this.linkTable = aliasParser.getMainTableClass();
+        if(join.onField().isEmpty()){
+            this.onField = join.joinField();
+        }else{
+            this.onField = join.onField();
         }
-        this.entityParser = EntityParser.computeIfAbsent(this.table);
-        this.linkTableEntityParser = EntityParser.computeIfAbsent(this.linkTable);
-        if(this.entityParser != null){
-            // 设置别名
-            aliasParser.set(this.entityParser.getTableName());
-            // 回写别名
-            this.tableAlias = aliasParser.get(this.entityParser.getTableName());
+        this.useDataSource = join.useDataSource();
+        if (!StringUtils.hasText(this.onField)) {
+            this.onField = this.joinField;
         }
-        if(this.linkTableEntityParser != null){
-            this.linkTableAlias = aliasParser.set(this.linkTableEntityParser.getTableName());
+        if (this.onTable == TableEntity.class) {
+            this.onTable = mainTable.getEntity();
         }
+        this.joinTableStructure = TableStructure.computeIfAbsent(this.mybatiscConfig,this.joinTable);
+        this.onTableStructure = TableStructure.computeIfAbsent(this.mybatiscConfig, this.onTable);
     }
 
     /**
@@ -98,6 +103,6 @@ public class JoinParser {
      * @return boolean
      */
     public boolean isPresent() {
-        return this.table != null;
+        return this.joinTable != null;
     }
 }

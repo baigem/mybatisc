@@ -56,6 +56,9 @@ public class MapList<K,T> extends ArrayList<T> {
     public T get(K k){
         return map.get(k);
     }
+    public boolean containsKey(K k){
+        return map.containsKey(k);
+    }
 
     public MapList<K,T> filter(Predicate<? super T> predicate){
         MapList<K,T> mapList = new MapList<>(this.keyFunction);

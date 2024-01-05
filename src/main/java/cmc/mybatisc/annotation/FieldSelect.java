@@ -1,7 +1,6 @@
 package cmc.mybatisc.annotation;
 
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.DelFlag;
+import cmc.mybatisc.config.interfaces.TableEntity;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -20,17 +19,12 @@ public @interface FieldSelect {
     /**
      * 查询表
      */
-    String table() default "";
+    Class<? extends TableEntity> table() default TableEntity.class;
 
     /**
      * 查询字段
      */
     String value() default "";
-
-    /**
-     * 类型
-     */
-    CodeStandardEnum nameMode() default CodeStandardEnum.UNDERLINE;
 
     /**
      * 是否模糊

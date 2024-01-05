@@ -36,7 +36,7 @@ public @interface Param {
      *
      * @return {@link String}
      */
-    DataScope.Oan oan() default DataScope.Oan.and;
+    DataScope.Oan oan() default DataScope.Oan.AND;
 
     /**
      * 左

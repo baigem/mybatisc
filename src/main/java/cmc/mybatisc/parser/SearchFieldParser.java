@@ -2,7 +2,8 @@ package cmc.mybatisc.parser;
 
 import cmc.mybatisc.annotation.DataScope;
 import cmc.mybatisc.annotation.SearchField;
-import cmc.mybatisc.base.CodeStandardEnum;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
+import cmc.mybatisc.core.util.TableStructure;
 import lombok.Data;
 import org.springframework.util.StringUtils;
 
@@ -21,6 +22,14 @@ import java.util.stream.Collectors;
 @Data
 public class SearchFieldParser {
     /**
+     * 名称转换
+     */
+    private MybatiscConfig mybatiscConfig;
+    /**
+     * 主表
+     */
+    private TableStructure mainTable;
+    /**
      * 字段名称
      */
     private String name;
@@ -36,10 +45,6 @@ public class SearchFieldParser {
      * join列表
      */
     private List<JoinParser> joinList;
-    /**
-     * 名称转换器
-     */
-    private CodeStandardEnum nameMode;
     /**
      * 模糊查询
      */
@@ -95,18 +100,21 @@ public class SearchFieldParser {
 
     private Field field;
 
-    public SearchFieldParser(AliasParser aliasParser, SearchField searchField, Field field) {
-        this.parse(aliasParser, searchField, field);
+    public SearchFieldParser(MybatiscConfig mybatiscConfig,TableStructure mainTable, Field field) {
+        this.mainTable = mainTable;
+        this.mybatiscConfig = mybatiscConfig;
+        this.parse(field.getAnnotation(SearchField.class), field);
     }
 
-    private void parse(AliasParser aliasParser, SearchField searchField, Field field) {
+    private void parse(SearchField searchField, Field field) {
         // 开始解析数据
         this.field = field;
         this.annotation = searchField;
         this.type = field.getType();
-        this.nameMode = searchField.nameMode();
         this.name = StringUtils.hasText(searchField.value()) ? searchField.value() : field.getName();
-        this.joinList = Arrays.stream(searchField.join()).map(info -> new JoinParser(info, aliasParser)).collect(Collectors.toList());
+        this.joinList = Arrays.stream(searchField.join())
+                .map(info -> new JoinParser(mybatiscConfig, this.mainTable,info))
+                .collect(Collectors.toList());
         this.like = searchField.like();
         this.range = searchField.range();
         this.sort = searchField.sort();
@@ -120,12 +128,6 @@ public class SearchFieldParser {
         this.rangeModeSuffix = searchField.rangeModeSuffix();
         this.rangeEndSuffix = searchField.rangeEndSuffix();
         this.listTypeSuffix = searchField.listTypeSuffix();
-
-        // 设置表别名
-        for (JoinParser joinParser : this.joinList) {
-            aliasParser.set(joinParser.getEntityParser().getTableName());
-            aliasParser.set(joinParser.getLinkTableEntityParser().getTableName());
-        }
     }
 
     /**

@@ -1,9 +1,9 @@
 package cmc.mybatisc.strengthen.imp;
 
 import cmc.mybatisc.annotation.SoftDelete;
-import cmc.mybatisc.base.CodeStandardEnum;
 import cmc.mybatisc.config.DelFlagConfig;
 import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.model.ParamAnnotation;
 import cmc.mybatisc.parser.SqlParser;
 import cmc.mybatisc.strengthen.BaseStrengthen;
@@ -55,25 +55,21 @@ public class SoftDeleteHandle extends BaseStrengthen {
         SqlParser sqlParser = new SqlParser();
         Map<String, Function<?, Serializable>> dy = sqlParser.getParameters();
         DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
-        SoftDelete softDelect = method.getAnnotation(SoftDelete.class);
-
-        Parameter[] parameters = method.getParameters();
-        String table = this.mapperParser.getEntityParser().getTableName();
-        if (!StringUtils.hasText(table)) {
+        SoftDelete softDelete = method.getAnnotation(SoftDelete.class);
+        // 获取表结构
+        TableStructure table = TableStructure.getTableStructure(softDelete.table(),mapperParser.getTableStructure());
+        if (table == null || !StringUtils.hasText(table.getName())) {
             throw new IllegalArgumentException("table name is not empty");
         }
-        CodeStandardEnum codeStandardEnum = this.getCodeStandardEnum(softDelect.nameMode());
-
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("<script> ");
-
         // 进行删除
-        stringBuilder.append(delFlagConfig.generateDeleteSql(dy,super.mapperParser.getEntityParser(),"where "));
+        stringBuilder.append(delFlagConfig.generateDeleteSql(dy,super.mapperParser.getTableStructure(),"where "));
         // 添加逻辑删除
-        stringBuilder.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getEntityParser(),"","and "));
-        for (Parameter parameter : parameters) {
+        stringBuilder.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getTableStructure(),"","and "));
+        for (Parameter parameter : method.getParameters()) {
             ParamAnnotation generate = ParamAnnotation.generate(parameter);
-            String fieldName = getFieldName(codeStandardEnum, generate.value, softDelect.removeSuffix());
+            String fieldName = table.getCompleteFieldName(generate.value, softDelete.removeSuffix());
             // 判断是否是列表
             if (MapperStrongUtils.isListTypeClass(parameter.getType())) {
                 stringBuilder.append(fieldName).append(" in <foreach item='item' collection='").append(generate.value).append("' open='(' separator=',' close=')'>#{item}</foreach> ").append(generate.oan.getValue()).append(" ");

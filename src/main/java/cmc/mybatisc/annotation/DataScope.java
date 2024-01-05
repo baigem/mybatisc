@@ -79,9 +79,9 @@ public @interface DataScope {
 
     @Dict("连接符")
     enum Oan implements BaseDict<String> {
-        or("or"),
-        and("and"),
-        not("not");
+        OR("or"),
+        AND("and"),
+        NOT("not");
 
         Oan(String value) {
             this.initialize("", value);

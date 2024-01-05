@@ -1,8 +1,7 @@
 package cmc.mybatisc.annotation;
 
 
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.DelFlag;
+import cmc.mybatisc.config.interfaces.TableEntity;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,7 +17,7 @@ public @interface Search {
     /**
      * 查询表
      */
-    String table() default "";
+    Class<? extends TableEntity> table() default TableEntity.class;
 
     /**
      * 关联查询
@@ -41,11 +40,6 @@ public @interface Search {
      * 添加字段
      */
     String[] addField() default {};
-
-    /**
-     * 类型
-     */
-    CodeStandardEnum nameMode() default CodeStandardEnum.UNDERLINE;
 
     /**
      * 移除后缀

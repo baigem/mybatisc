@@ -1,7 +1,5 @@
 package cmc.mybatisc.annotation;
 
-import cmc.mybatisc.base.CodeStandardEnum;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -25,11 +23,6 @@ public @interface SearchField {
      * 连表查询
      */
     Join[] join() default {};
-
-    /**
-     * 名称规范
-     */
-    CodeStandardEnum nameMode() default CodeStandardEnum.UNDERLINE;
 
     /**
      * 是否模糊搜索

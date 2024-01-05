@@ -34,7 +34,7 @@ public class ParamAnnotation {
 
     public String sortRule;
 
-    public DataScope.Oan oan = DataScope.Oan.and;
+    public DataScope.Oan oan = DataScope.Oan.AND;
 
     public cmc.mybatisc.annotation.Param.Over left = cmc.mybatisc.annotation.Param.Over.EMPTY;
 
@@ -57,7 +57,7 @@ public class ParamAnnotation {
     public static ParamAnnotation generate(Annotation param) {
         ParamAnnotation paramAnnotation = new ParamAnnotation();
         paramAnnotation.value = ReflectUtil.invoke(param, "value");
-        paramAnnotation.oan = ReflectUtils.invokeGet(param, "oan", DataScope.Oan.and);
+        paramAnnotation.oan = ReflectUtils.invokeGet(param, "oan", DataScope.Oan.AND);
         paramAnnotation.left = ReflectUtils.invokeGet(param, "left", cmc.mybatisc.annotation.Param.Over.EMPTY);
         paramAnnotation.right = ReflectUtils.invokeGet(param, "right", cmc.mybatisc.annotation.Param.Over.EMPTY);
         paramAnnotation.like = ReflectUtils.invokeGet(param, "like", false);

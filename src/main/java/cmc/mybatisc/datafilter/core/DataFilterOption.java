@@ -1,10 +1,12 @@
 package cmc.mybatisc.datafilter.core;
 
 
-import cmc.mybatisc.config.interfaces.DelFlag;
+import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
 import cmc.mybatisc.config.interfaces.TableEntity;
 import cmc.mybatisc.core.StatementHandlerReflex;
-import cmc.mybatisc.parser.EntityParser;
+import cmc.mybatisc.core.util.TableStructure;
+import cmc.mybatisc.parser.JoinParser;
 import cn.hutool.core.util.ReflectUtil;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -205,25 +207,27 @@ public class DataFilterOption {
 
 
     public void handleJoin() {
+        MybatiscConfig config = MybatisScannerConfigurer.getBeanFactory().getBean(MybatiscConfig.class);
         // 处理join连接
         LinkedHashMap<String, Join> objectObjectLinkedHashMap = new LinkedHashMap<>();
         this.dataSource.getJoin().forEach(join -> {
-            EntityParser entityParser = EntityParser.computeIfAbsent(join.table());
-            EntityParser linkTable = EntityParser.computeIfAbsent(join.linkTable());
-
+            // 第二个参数不能为null，此处需要修复
+            JoinParser joinParser = new JoinParser(config, null,join);
+            TableStructure joinTable = joinParser.getJoinTableStructure();
+            TableStructure linkTable = joinParser.getOnTableStructure();
             // 判断原join中是否存在需要连的表
             Join jo = new Join();
-            Table table = new Table(entityParser.getTableName());
-            table.setAlias(new Alias("range_" + join.table()));
+            Table table = new Table(joinTable.getName());
+//            table.setAlias(new Alias("range_" + join.joinTable()));
+            table.setAlias(new Alias(joinTable.getAlias()));
             jo.setRightItem(table);
             // 有自定义的关联表就自定义，没有就默认主表
-            Table joinTable = join.linkTable() != TableEntity.class ? new Table(linkTable.getTableName()) : this.from;
             // on的字段名称有就用，没有就默认关联表的字段名名称
-            String field = StringUtils.hasText(join.linkField()) ? join.linkField() : join.field();
-            Column left = new Column((Table) jo.getRightItem(), join.field());
-            Column right = new Column(joinTable, field);
+            String field = StringUtils.hasText(join.onField()) ? join.onField() : join.joinField();
+            Column left = new Column((Table) jo.getRightItem(), join.joinField());
+            Column right = new Column(join.onTable() != TableEntity.class ? new Table(linkTable.getName()) : this.from, field);
             jo.addOnExpression(new EqualsTo(left, right));
-            objectObjectLinkedHashMap.put(entityParser.getTableName(), jo);
+            objectObjectLinkedHashMap.put(right.getTable().getName(), jo);
 
             // 判断是否需要进行逻辑删除过滤 后续优化先注释
 //            for (DelFlag delFlag : join.delFlag()) {
@@ -234,7 +238,7 @@ public class DataFilterOption {
 //            }
 
             // 判断是不是数据权限的表
-            if (join.isDataScope()) {
+            if (join.useDataSource()) {
                 // 设置权限限制表
                 this.leftSql.setTable(table);
                 this.dataScopeTable = table;

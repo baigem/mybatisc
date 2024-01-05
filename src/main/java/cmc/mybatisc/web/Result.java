@@ -1,7 +1,7 @@
 package cmc.mybatisc.web;
 
 
-import cmc.mybatisc.utils.string.StringUtils;
+import cmc.mybatisc.utils.string.StringTools;
 
 import java.util.HashMap;
 import java.util.Objects;
@@ -54,7 +54,7 @@ public class Result extends HashMap<String, Object>
     {
         super.put(CODE_TAG, code);
         super.put(MSG_TAG, msg);
-        if (StringUtils.isNotNull(data))
+        if (StringTools.isNotNull(data))
         {
             super.put(DATA_TAG, data);
         }

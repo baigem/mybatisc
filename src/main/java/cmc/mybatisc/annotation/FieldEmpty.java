@@ -1,7 +1,5 @@
 package cmc.mybatisc.annotation;
 
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.DelFlag;
 import cmc.mybatisc.config.interfaces.TableEntity;
 
 import java.lang.annotation.ElementType;
@@ -21,17 +19,12 @@ public @interface FieldEmpty {
     /**
      * 查询表
      */
-    Class<TableEntity> table() default TableEntity.class;
+    Class<? extends TableEntity> table() default TableEntity.class;
 
     /**
      * 需要清空的字段列表
      */
     DataScope.Field[] value();
-
-    /**
-     * 类型
-     */
-    CodeStandardEnum nameMode() default CodeStandardEnum.UNDERLINE;
 
     /**
      * 移除

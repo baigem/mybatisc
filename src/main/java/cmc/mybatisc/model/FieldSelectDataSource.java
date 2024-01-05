@@ -1,7 +1,5 @@
 package cmc.mybatisc.model;
 
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.config.interfaces.DelFlag;
 import cmc.mybatisc.utils.reflect.ReflectUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,11 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 字段查询数据源
@@ -50,10 +45,6 @@ public class FieldSelectDataSource {
      */
     private String field;
     /**
-     * 名称规范
-     */
-    private CodeStandardEnum nameMode;
-    /**
      * 是否模糊搜索
      */
     private Boolean like;
@@ -81,7 +72,6 @@ public class FieldSelectDataSource {
         // 进行反射获取注解中的值
         String table = ReflectUtils.invokeGet(annotation, "table", "");
         String field = ReflectUtils.invokeGet(annotation, "value", "");
-        CodeStandardEnum nameMode = ReflectUtils.invokeGet(annotation, "nameMode", null);
         boolean isLike = ReflectUtils.invokeGet(annotation, "like", false);
         String removeSuffix = ReflectUtils.invokeGet(annotation, "removeSuffix", "");
         boolean mapping = ReflectUtils.invokeGet(annotation, "mapping", false);
@@ -91,7 +81,6 @@ public class FieldSelectDataSource {
         return FieldSelectDataSource.builder()
                 .table(table)
                 .field(field)
-                .nameMode(nameMode)
                 .like(isLike)
                 .removeSuffix(removeSuffix)
                 .mapping(mapping)

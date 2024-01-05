@@ -2,7 +2,10 @@ package cmc.mybatisc.parser;
 
 import cmc.mybatisc.annotation.Search;
 import cmc.mybatisc.annotation.SearchField;
-import cmc.mybatisc.base.CodeStandardEnum;
+import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
+import cmc.mybatisc.config.interfaces.TableEntity;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.model.QueryFieldCriteria;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,15 +29,14 @@ import java.util.stream.Collectors;
 @Data
 @NoArgsConstructor
 public class SearchParser {
-    private AliasParser alias = new AliasParser();
     /**
-     * 查询表
+     * mybatisc配置
      */
-    private String table;
+    private MybatiscConfig mybatiscConfig;
     /**
-     * 表别名
+     * 表结构
      */
-    private String tableAlias;
+    private TableStructure tableStructure;
     /**
      * 关联查询
      */
@@ -51,10 +53,6 @@ public class SearchParser {
      * 添加字段
      */
     private List<String> addField;
-    /**
-     * 名称转换器
-     */
-    private CodeStandardEnum nameMode;
 
     /**
      * 移除后缀
@@ -81,33 +79,34 @@ public class SearchParser {
      */
     private MapperParser mapperParser;
 
-    public SearchParser(Search search, Method method, MapperParser mapperParser) {
-        this.parse(search, method, mapperParser);
+    public SearchParser(MybatiscConfig mybatiscConfig,Method method, MapperParser mapperParser) {
+        this.mybatiscConfig = mybatiscConfig;
+        this.parse(method.getAnnotation(Search.class), method, mapperParser);
     }
 
     private void parse(Search search, Method method, MapperParser mapperParser) {
         this.mapperParser = mapperParser;
-        this.table = search.table();
         this.fields = Arrays.asList(search.fields());
         this.excludeField = Arrays.asList(search.excludeField());
         this.addField = Arrays.asList(search.addField());
-        this.nameMode = search.nameMode();
         this.removeSuffix = search.removeSuffix();
         this.mapping = search.mapping();
         this.mappingField = search.mappingField();
-        if (!StringUtils.hasText(this.table)) {
-            this.table = mapperParser.getEntityParser().getTableName();
+        // 设置表结构
+        if (search.table() != TableEntity.class) {
+            this.tableStructure = new TableStructure(mybatiscConfig,search.table());
+        }else{
+            this.tableStructure = mapperParser.getTableStructure();
         }
-        if (!StringUtils.hasText(this.table)) {
+        if (this.tableStructure != null && !StringUtils.hasText(this.tableStructure.getName())) {
             throw new RuntimeException("Table Name not found");
         }
-        this.alias.setMainTable(mapperParser.getEntityParser().getEntity(),this.table);
-        // 设置表别名
-        this.tableAlias = this.alias.get(this.table);
-        this.joinList = Arrays.stream(search.join()).map(info -> new JoinParser(info, this.alias)).filter(JoinParser::isPresent).collect(Collectors.toList());
+        this.joinList = Arrays.stream(search.join())
+                .map(info -> new JoinParser(this.mybatiscConfig, tableStructure, info))
+                .filter(JoinParser::isPresent).collect(Collectors.toList());
         // 解析搜索字段列表
         for (Parameter parameter : method.getParameters()) {
-            this.parameterParserList.add(new SearchParameterParser(parameter, this.alias));
+            this.parameterParserList.add(new SearchParameterParser(this.mybatiscConfig,this.tableStructure,parameter));
         }
     }
 
@@ -115,28 +114,28 @@ public class SearchParser {
     public static SearchParser parse(QueryFieldCriteria info) {
         SearchParser searchParser = new SearchParser();
         SearchField annotation = (SearchField) info.getAnnotation();
-        searchParser.alias = info.getTableAliasMap();
+        searchParser.mybatiscConfig = MybatisScannerConfigurer.getBeanFactory().getBean(MybatiscConfig.class);
         searchParser.mapperParser = info.getMapperParser();
-        searchParser.table = info.getTableName();
         searchParser.fields = Collections.emptyList();
         searchParser.excludeField = Collections.emptyList();
         searchParser.addField = Collections.emptyList();
-        searchParser.joinList = Arrays.stream(annotation.join()).map(e -> new JoinParser(e, info.getTableAliasMap())).filter(JoinParser::isPresent).collect(Collectors.toList());
-        searchParser.nameMode = annotation.nameMode();
+        if (StringUtils.hasText(info.getTableName())) {
+            searchParser.tableStructure = new TableStructure(searchParser.mybatiscConfig, info.getFieldClass());
+        }else{
+            searchParser.tableStructure = info.getMapperParser().getTableStructure();
+        }
+        // 校验表名称
+        if (!StringUtils.hasText(searchParser.tableStructure.getName())) {
+            throw new RuntimeException("Table Name not found");
+        }
+        searchParser.joinList = Arrays.stream(annotation.join())
+                .map(e -> new JoinParser(searchParser.mybatiscConfig, searchParser.tableStructure,e))
+                .filter(JoinParser::isPresent).collect(Collectors.toList());
         searchParser.removeSuffix = "";
         searchParser.mapping = false;
         searchParser.mappingField = null;
-        if (!StringUtils.hasText(searchParser.table)) {
-            searchParser.table = info.getMapperParser().getEntityParser().getTableName();
-        }
-        if (!StringUtils.hasText(searchParser.table)) {
-            throw new RuntimeException("Table Name not found");
-        }
-        searchParser.alias.setMainTable(searchParser.mapperParser.getEntity(), searchParser.table);
-        // 设置表别名
-        searchParser.tableAlias = searchParser.alias.get(searchParser.table);
         // 解析搜索字段列表
-        searchParser.parameterParserList.add(new SearchParameterParser(info.getParameter(), info.getTableAliasMap()));
+        searchParser.parameterParserList.add(new SearchParameterParser(searchParser.mybatiscConfig, searchParser.tableStructure, info.getParameter()));
         return searchParser;
     }
 
@@ -146,7 +145,7 @@ public class SearchParser {
      * @return {@link List}<{@link String}>
      */
     public List<String> getDisplayField() {
-        List<String> list = new ArrayList<>(this.mapperParser.getEntityParser().getFieldList());
+        List<String> list = new ArrayList<>(this.mapperParser.getTableStructure().getFieldNames());
         list.addAll(this.addField);
         // 去重
         return list.stream().distinct().filter(e -> !this.excludeField.contains(e)).map(e -> {
@@ -154,15 +153,11 @@ public class SearchParser {
                 // 把.前的表名获取出来
                 String tableName = e.substring(0, e.indexOf(".")).replaceAll("['`]", "");
                 String field = e.substring(e.indexOf(".") + 1).replaceAll("['`]", "");
-                return this.alias.computeIfAbsent(tableName) + "." + field;
+                return this.mybatiscConfig.getAlias().computeIfAbsent(tableName) + "." + field;
             } else {
-                return this.tableAlias + "." + e;
+                return this.tableStructure.getAlias() + "." + e;
             }
         }).collect(Collectors.toList());
-    }
-
-    public CodeStandardEnum getCodeStandard() {
-        return (this.mapperParser.getMapperStrong() != null && this.mapperParser.getMapperStrong().nameMode() != CodeStandardEnum.UNDERLINE) ? this.mapperParser.getMapperStrong().nameMode() : this.nameMode;
     }
 
     public List<JoinParser> getJoinParserList() {

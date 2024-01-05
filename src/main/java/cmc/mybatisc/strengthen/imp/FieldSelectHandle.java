@@ -1,9 +1,9 @@
 package cmc.mybatisc.strengthen.imp;
 
 import cmc.mybatisc.annotation.FieldSelect;
-import cmc.mybatisc.base.CodeStandardEnum;
 import cmc.mybatisc.config.DelFlagConfig;
 import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.model.FieldSelectDataSource;
 import cmc.mybatisc.model.ParamAnnotation;
 import cmc.mybatisc.parser.SqlParser;
@@ -62,15 +62,10 @@ public class FieldSelectHandle extends BaseStrengthen {
         Map<String, Function<?, Serializable>> dy = sqlParser.getParameters();
         DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
         FieldSelect fieldSelect = method.getAnnotation(FieldSelect.class);
-        // 表名
-        String table = MapperStrongUtils.getTableName(this.mapperParser.getEntityParser().getTableName(), fieldSelect.table());
-        String tableAlias = this.mapperParser.getEntityParser().getTableAlias();
-
-        if (!StringUtils.hasText(table)) {
+        TableStructure table = TableStructure.getTableStructure(fieldSelect.table(), mapperParser.getTableStructure());
+        if (table == null || !StringUtils.hasText(table.getName())) {
             throw new IllegalArgumentException("table name is not empty");
         }
-        // 名称处理器
-        CodeStandardEnum codeStandardEnum = this.getCodeStandardEnum(fieldSelect.nameMode());
         // 获取入参
         StringBuilder sql = new StringBuilder();
         Class<?> returnType = method.getReturnType();
@@ -78,22 +73,23 @@ public class FieldSelectHandle extends BaseStrengthen {
         if (returnType == Integer.class || returnType == Long.class || returnType == int.class || returnType == long.class) {
             fieldName = "count(*)";
         }
-        sql.append("<script> select ").append(fieldName).append(" from ").append(table).append(" as ").append(tableAlias).append(" <where> ");
+        sql.append("<script> select ").append(fieldName).append(" from ").append(table).append(" as ").append(table.getAlias()).append(" <where> ");
         // 添加逻辑删除
-        sql.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getEntityParser(),"",""));
+        sql.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getTableStructure(),"",""));
 
         Parameter[] parameters = method.getParameters();
         // 排序列表
         List<ParamAnnotation> sortList = new ArrayList<>();
-
+        // 遍历入参
         for (Parameter parameter : parameters) {
             // 判断是否是列表
             ParamAnnotation param = ParamAnnotation.generate(parameter);
-
+            // 判断是否排序
             if (param.sort) {
                 sortList.add(param);
             }
-            String field = tableAlias + "." + SqlUtils.packageField(getFieldName(codeStandardEnum, param.value, fieldSelect.removeSuffix()));
+            // 获取完整的字段
+            String field = table.getCompleteFieldName(param.value, fieldSelect.removeSuffix());
             if (MapperStrongUtils.isListTypeClass(parameter.getType())) {
                 if (fieldSelect.allowNull() || param.isNull) {
                     if (param.isNull) {
@@ -160,9 +156,8 @@ public class FieldSelectHandle extends BaseStrengthen {
         if (!sortList.isEmpty()) {
             sql.append("ORDER BY ");
             for (ParamAnnotation paramAnnotation : sortList) {
-                String field = tableAlias + "." + SqlUtils.packageField(getFieldName(codeStandardEnum, paramAnnotation.value, fieldSelect.removeSuffix()));
-                final String s = "%s %s";
-                sql.append(String.format(s, field, paramAnnotation.sortRule)).append(", ");
+                String field = table.getCompleteFieldName(paramAnnotation.value, fieldSelect.removeSuffix());
+                sql.append(String.format("%s %s", field, paramAnnotation.sortRule)).append(", ");
             }
         }
         sqlParser.setSql(sql.toString().replaceAll(" not *$| or *$| and *$|where *$|, $", "") + "</script>");

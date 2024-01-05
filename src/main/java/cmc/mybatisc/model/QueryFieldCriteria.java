@@ -1,7 +1,8 @@
 package cmc.mybatisc.model;
 
 import cmc.mybatisc.annotation.DataScope;
-import cmc.mybatisc.base.CodeStandardEnum;
+import cmc.mybatisc.core.util.AliasOperation;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.parser.*;
 import lombok.Builder;
 import lombok.Data;
@@ -21,11 +22,14 @@ import java.util.List;
 @Data
 @Builder
 public class QueryFieldCriteria {
+    /**
+     * 映射分析器
+     */
     private MapperParser mapperParser;
     /**
      * 表别名
      */
-    private AliasParser tableAliasMap;
+    private AliasOperation aliasOperation;
     /**
      * 别名
      */
@@ -34,10 +38,6 @@ public class QueryFieldCriteria {
      * 注释
      */
     private Annotation annotation;
-    /**
-     * 代码标准枚举
-     */
-    private CodeStandardEnum codeStandardEnum;
     /**
      * 表名
      */
@@ -54,6 +54,9 @@ public class QueryFieldCriteria {
      * 参数类型
      */
     private Class<?> fieldClass;
+    /**
+     * 参数
+     */
     private Parameter parameter;
     /**
      * 查询模式
@@ -116,15 +119,13 @@ public class QueryFieldCriteria {
         List<QueryFieldCriteria> list = new ArrayList<>();
         for (SearchParameterParser searchParameterParser : searchParser.getParameterParserList()) {
             for (SearchFieldParser fieldParser : searchParameterParser.getSearchFieldList()) {
-                String tableName = fieldParser.getJoinList().isEmpty() ? searchParser.getNameMode().handler(searchParser.getTable()) : fieldParser.getJoinList().get(fieldParser.getJoinList().size() - 1).getEntityParser().getTableName();
-                String alias = fieldParser.getJoinList().isEmpty() ? searchParser.getTableAlias() : fieldParser.getJoinList().get(fieldParser.getJoinList().size() - 1).getTableAlias();
+                TableStructure table = fieldParser.getJoinList().isEmpty() ? searchParser.getTableStructure() : fieldParser.getJoinList().get(fieldParser.getJoinList().size() - 1).getJoinTableStructure();
                 QueryFieldCriteria build = QueryFieldCriteria.builder()
                         .parameter(searchParameterParser.getParameter())
                         .mapperParser(searchParser.getMapperParser())
-                        .tableName(tableName)
-                        .alias(alias)
-                        .tableAliasMap(searchParser.getAlias())
-                        .codeStandardEnum(searchParser.getCodeStandard())
+                        .tableName(table.getName())
+                        .alias(table.getAlias())
+                        .aliasOperation(searchParser.getMybatiscConfig().getAlias())
                         .fieldName(searchParser.getNameMode().handler(fieldParser.getName()))
                         .like(fieldParser.getLike())
                         .range(fieldParser.getRange())

@@ -1,15 +1,13 @@
 package cmc.mybatisc.parser;
 
 import cmc.mybatisc.annotation.MapperStrong;
-import cmc.mybatisc.base.CodeStandardEnum;
-import cmc.mybatisc.utils.MapperStrongUtils;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
+import cmc.mybatisc.config.interfaces.TableEntity;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.utils.reflect.GenericType;
 import lombok.Data;
-import lombok.Getter;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,37 +29,32 @@ public class MapperParser {
      * mapper增强注解
      */
     private MapperStrong mapperStrong;
+
     /**
      * mapper代理对象
      */
     private Class<?> mapper;
-    /**
-     * 表实体对象
-     */
-    private Class<?> entity;
 
     /**
      * 实体解析器
      */
-    private EntityParser entityParser;
+    private TableStructure tableStructure;
 
-    public MapperParser(Class<?> mapper) {
+    public MapperParser(MybatiscConfig mybatiscConfig, Class<?> mapper) {
         list.add(this);
         this.mapper = mapper;
         this.mapperStrong = mapper.getAnnotation(MapperStrong.class);
-        if (this.mapperStrong != null && this.mapperStrong.value() != Class.class) {
-            this.entity = this.mapperStrong.value();
+        if (this.mapperStrong != null && this.mapperStrong.value() != TableEntity.class) {
+            this.tableStructure = new TableStructure(mybatiscConfig,this.mapperStrong.value());
         } else if (GenericType.forClass(mapper).first() != null) {
-            this.entity = GenericType.forClass(mapper).first();
+            this.tableStructure = new TableStructure(mybatiscConfig,GenericType.forClass(mapper).first());
         } else {
-            this.entity = null;
+            this.tableStructure = null;
         }
-        if (this.entity != null) {
-            this.entityParser = new EntityParser(this.entity);
-            List<String> fieldList = this.entityParser.getFieldList();
+        if (this.tableStructure != null) {
             // 删除需要排除的字段
             Optional.ofNullable(this.mapperStrong).ifPresent(info -> {
-                Arrays.stream(info.ignoreField()).forEach(fieldList::remove);
+                this.tableStructure.removeFields(info.ignoreField());
             });
         }
     }
@@ -74,7 +67,7 @@ public class MapperParser {
      */
     public static MapperParser get(String tableName){
         for (MapperParser mapperParser : MapperParser.list) {
-            if(tableName.equals(mapperParser.entityParser.getTableName())){
+            if(mapperParser.tableStructure != null && tableName.equals(mapperParser.tableStructure.getName())){
                 return mapperParser;
             }
         }
@@ -89,7 +82,7 @@ public class MapperParser {
      */
     public static MapperParser get(Class<?> entity){
         for (MapperParser mapperParser : MapperParser.list) {
-            if(entity == mapperParser.entity){
+            if(mapperParser.tableStructure != null && entity == mapperParser.tableStructure.getEntity()){
                 return mapperParser;
             }
         }

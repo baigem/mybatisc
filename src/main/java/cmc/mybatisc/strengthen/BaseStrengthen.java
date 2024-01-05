@@ -1,6 +1,7 @@
 package cmc.mybatisc.strengthen;
 
-import cmc.mybatisc.base.CodeStandardEnum;
+import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
 import cmc.mybatisc.model.FieldSelectDataSource;
 import cmc.mybatisc.model.ParamAnnotation;
 import cmc.mybatisc.parser.MapperParser;
@@ -27,6 +28,10 @@ public abstract class BaseStrengthen implements Strengthen {
      */
     public final static Map<String, BaseStrengthen> TABLE_STRENGTHEN = new HashMap<>();
     /**
+     * mybatisc配置
+     */
+    protected MybatiscConfig mybatiscConfig;
+    /**
      * mybatis的sqlSession
      */
     protected final SqlSession sqlSession;
@@ -45,43 +50,20 @@ public abstract class BaseStrengthen implements Strengthen {
     private final String handleFieldString;
 
     public BaseStrengthen(SqlSession sqlSession, Class<?> mapper) {
+        // 获取配置bean
+        this.mybatiscConfig = MybatisScannerConfigurer.getBeanFactory().getBean(MybatiscConfig.class);
         this.sqlSession = sqlSession;
         this.mapper = mapper;
-        this.mapperParser = new MapperParser(mapper);
+        this.mapperParser = new MapperParser(this.mybatiscConfig, mapper);
 
         // 处理字段名称
-        this.handleFieldString = this.mapperParser.getEntityParser().getFieldList().stream().map(field -> {
+        this.handleFieldString = this.mapperParser.getTableStructure().getFieldNames().stream().map(field -> {
             if (field.startsWith("`") || field.equals("*")) {
                 return field;
             }
             return "`" + field + "`";
         }).collect(Collectors.joining(","));
-        TABLE_STRENGTHEN.put(this.mapperParser.getEntityParser().getTableName(), this);
-    }
-
-    /**
-     * 获取字段名称
-     *
-     * @param codeStandardEnum 代码标准枚举
-     * @param fieldName        字段名称
-     * @param suffix           后缀
-     * @return {@link String}
-     */
-    public static String getFieldName(CodeStandardEnum codeStandardEnum, String fieldName, String suffix) {
-        if (suffix == null) {
-            return codeStandardEnum.handler(fieldName);
-        }
-        return SqlUtils.packageField(codeStandardEnum.handler(fieldName.replaceAll(suffix + "$", "")));
-    }
-
-    /**
-     * 获取代码标准枚举
-     *
-     * @param codeStandardEnum 代码标准枚举
-     * @return {@link CodeStandardEnum}
-     */
-    public CodeStandardEnum getCodeStandardEnum(CodeStandardEnum codeStandardEnum) {
-        return (this.mapperParser.getMapperStrong() != null && this.mapperParser.getMapperStrong().nameMode() != CodeStandardEnum.UNDERLINE) ? this.mapperParser.getMapperStrong().nameMode() : codeStandardEnum;
+        TABLE_STRENGTHEN.put(this.mapperParser.getTableStructure().getName(), this);
     }
 
     /**
@@ -116,12 +98,12 @@ public abstract class BaseStrengthen implements Strengthen {
      * @return {@link Function}<{@link Object[]}, {@link Object}>
      */
     protected Function<Object[], Object> mapKey(boolean full, Method method, String fieldName, String id,SqlParser sqlParser) {
-        if (!StringUtils.hasText(fieldName) && this.mapperParser.getEntityParser().getKeyField() == null) {
+        if (!StringUtils.hasText(fieldName) && this.mapperParser.getTableStructure().getPrimaryKey() == null) {
             throw new RuntimeException("启动mapping属性，主键id未配置，请配置主键id注解@TableId，或者使用mappingField配置");
         }
         // 获取泛型类型
         GenericType genericType = GenericType.forMethod(this.mapper, method);
-        String keyName = StringUtils.hasText(fieldName) ? fieldName : this.mapperParser.getEntityParser().getKeyField().getName();
+        String keyName = StringUtils.hasText(fieldName) ? fieldName : this.mapperParser.getTableStructure().getPrimaryKeyName();
         Class<?> returnTypeClass = genericType.last(method.getReturnType());
         Field key = this.getPrototypeChainField(returnTypeClass, keyName);
         if (key == null) {

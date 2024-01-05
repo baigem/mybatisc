@@ -1,6 +1,10 @@
 package cmc.mybatisc.parser;
 
 import cmc.mybatisc.annotation.SearchField;
+import cmc.mybatisc.config.interfaces.MybatiscConfig;
+import cmc.mybatisc.config.interfaces.NameConversion;
+import cmc.mybatisc.core.util.AliasOperation;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.utils.reflect.ReflectUtils;
 import lombok.Data;
 
@@ -19,6 +23,14 @@ import java.util.List;
 @Data
 public class SearchParameterParser {
     /**
+     * mybatisc配置
+     */
+    private MybatiscConfig mybatiscConfig;
+    /**
+     * 主表
+     */
+    private TableStructure mainTable;
+    /**
      * 参数
      */
     private Parameter parameter;
@@ -31,17 +43,19 @@ public class SearchParameterParser {
      */
     private List<SearchFieldParser> searchFieldList = new ArrayList<>();
 
-    public SearchParameterParser(Parameter parameter, AliasParser aliasParser) {
-        this.parse(parameter, aliasParser);
+    public SearchParameterParser(MybatiscConfig mybatiscConfig,TableStructure tableStructure, Parameter parameter) {
+        this.mybatiscConfig = mybatiscConfig;
+        this.mainTable = tableStructure;
+        this.parse(parameter);
     }
 
-    private void parse(Parameter parameter, AliasParser aliasParser) {
+    private void parse(Parameter parameter) {
         this.parameter = parameter;
         this.name = parameter.getName();
         Class<?> type = parameter.getType();
         for (Field declaredField : ReflectUtils.getAllField(type)) {
             if (declaredField.isAnnotationPresent(SearchField.class)) {
-                this.searchFieldList.add(new SearchFieldParser(aliasParser, declaredField.getAnnotation(SearchField.class), declaredField));
+                this.searchFieldList.add(new SearchFieldParser(this.mybatiscConfig,  this.mainTable,declaredField));
             }
         }
     }

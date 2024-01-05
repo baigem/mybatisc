@@ -1,6 +1,6 @@
 package cmc.mybatisc.core;
 
-import cmc.mybatisc.utils.string.StringUtils;
+import cmc.mybatisc.utils.string.StringTools;
 import cn.hutool.core.thread.ThreadUtil;
 import lombok.extern.slf4j.Slf4j;
 
@@ -215,7 +215,7 @@ public class GlobalContextHolder {
 
     protected static void set(String key, Object value) {
         Map<String, Object> map = getLocalMap();
-        map.put(key, value == null ? StringUtils.EMPTY : value);
+        map.put(key, value == null ? StringTools.EMPTY : value);
     }
 
     /**
@@ -225,7 +225,7 @@ public class GlobalContextHolder {
      * @return {@link T}
      */
     protected static <T> T get(String key) {
-        return StringUtils.cast(getLocalMap().getOrDefault(key, StringUtils.EMPTY));
+        return StringTools.cast(getLocalMap().getOrDefault(key, StringTools.EMPTY));
     }
 
     /**
@@ -237,7 +237,7 @@ public class GlobalContextHolder {
      */
     protected static <T> T get(String key, Object defaultValue) {
         Map<String, Object> map = getLocalMap();
-        return StringUtils.cast(map.getOrDefault(key, defaultValue));
+        return StringTools.cast(map.getOrDefault(key, defaultValue));
     }
 
 }

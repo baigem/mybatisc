@@ -1,7 +1,7 @@
 package cmc.mybatisc.config.interfaces;
 
-import cmc.mybatisc.parser.EntityParser;
-import cmc.mybatisc.parser.MapperParser;
+import cmc.mybatisc.core.util.TableStructure;
+import cmc.mybatisc.utils.string.StringTools;
 import com.alibaba.fastjson2.JSON;
 
 import java.io.Serializable;
@@ -28,7 +28,7 @@ public interface DelFlag{
      * @param ignore 映射器解析器
      * @return boolean
      */
-    default boolean isAccuracy(EntityParser ignore){
+    default boolean isAccuracy(TableStructure ignore){
         return true;
     }
 
@@ -67,40 +67,54 @@ public interface DelFlag{
     /**
      * 生成查询sql
      *
-     * @param mapperParser 映射器解析器
      * @param prefix       前缀
+     * @param dy           动态数据
+     * @param tableStructure 实体解析器
+     * @param suffix        后缀
      * @return {@link String}
      */
-    default String generateSelectSql(Map<String, Function<?,Serializable>> dy,EntityParser entityParser, String prefix, String suffix){
-        String alise = entityParser.getTableAlias();
+    default String generateSelectSql(Map<String, Function<?,Serializable>> dy,TableStructure tableStructure, String prefix, String suffix){
+        String alise = tableStructure.getAlias();
         String sql;
         if(this.hasDynamicUnDelValue()){
-            sql = alise + "." + this.getFieldName() + " = #{" + this.getOnlyKey() + "} " + suffix;
+            sql = StringTools.concat(alise,".",this.getFieldName()," = #{",this.getOnlyKey(),"} ", suffix);
             dy.put(this.getOnlyKey(),ignore->this.getUnDelValue());
         }else{
             Serializable unDelValue = this.getUnDelValue();
             if(unDelValue == null){
-                sql = alise + "." + this.getFieldName() + " is null " + suffix;
+                sql = StringTools.concat(alise,".",this.getFieldName()," is null ", suffix);
             }else {
-                sql = alise + "." + this.getFieldName() + " = " + unDelValue + " " + suffix;
+                sql = StringTools.concat(alise,".",this.getFieldName()," = ",unDelValue.toString()," ",suffix);
             }
         }
-
         return prefix+" "+sql;
     }
 
-    default String generateDeleteSql(Map<String, Function<?,Serializable>> dy, EntityParser entityParser, String suffix){
-        String tableName = entityParser.getTableName();
-        String alise = entityParser.getTableAlias();
+    /**
+     * 生成delete sql
+     *
+     * @param dy           dy
+     * @param entityParser 实体解析器
+     * @param suffix       后缀
+     * @return {@link String}
+     */
+    default String generateDeleteSql(Map<String, Function<?,Serializable>> dy, TableStructure entityParser, String suffix){
+        String tableName = entityParser.getName();
+        String alise = entityParser.getAlias();
         if(this.hasDynamicDelValue()){
             dy.put(this.getOnlyKey(),ignore->this.getDelValue());
-            return "update " + tableName +" as " + alise + " set " + alise + "." + getFieldName() + " = #{"+ this.getOnlyKey() +"} " + suffix;
+            return StringTools.concat("update ",tableName," as " ,alise ," set ",alise,".",getFieldName()," = #{",this.getOnlyKey(),"} ",suffix);
         }else{
-            return "update " + tableName +" as " + alise + " set " + alise + "." + getFieldName() + " = " + JSON.toJSONString(getDelValue()) + " " + suffix;
+            return StringTools.concat("update ",tableName," as ",alise," set ",alise,".",getFieldName()," = ",JSON.toJSONString(getDelValue())," ",suffix);
         }
     }
 
 
+    /**
+     * 获取唯一秘钥
+     *
+     * @return {@link String}
+     */
     default String getOnlyKey(){
         return this.getFieldName()+"_value";
     }

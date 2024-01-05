@@ -1,6 +1,6 @@
 package cmc.mybatisc.utils;
 
-import cmc.mybatisc.utils.string.StringUtils;
+import cmc.mybatisc.utils.string.StringTools;
 import cn.hutool.core.convert.Convert;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -172,13 +172,13 @@ public class ServletUtils
         }
 
         String uri = request.getRequestURI();
-        if (StringUtils.inStringIgnoreCase(uri, ".json", ".xml"))
+        if (StringTools.inStringIgnoreCase(uri, ".json", ".xml"))
         {
             return true;
         }
 
         String ajax = request.getParameter("__ajax");
-        return StringUtils.inStringIgnoreCase(ajax, "json", "xml");
+        return StringTools.inStringIgnoreCase(ajax, "json", "xml");
     }
 
     /**
@@ -195,7 +195,7 @@ public class ServletUtils
         }
         catch (UnsupportedEncodingException e)
         {
-            return StringUtils.EMPTY;
+            return StringTools.EMPTY;
         }
     }
 
@@ -213,7 +213,7 @@ public class ServletUtils
         }
         catch (UnsupportedEncodingException e)
         {
-            return StringUtils.EMPTY;
+            return StringTools.EMPTY;
         }
     }
 }

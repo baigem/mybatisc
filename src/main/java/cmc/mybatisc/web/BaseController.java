@@ -1,7 +1,7 @@
 package cmc.mybatisc.web;
 
 import cmc.mybatisc.utils.PageUtils;
-import cmc.mybatisc.utils.string.StringUtils;
+import cmc.mybatisc.utils.string.StringTools;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.github.pagehelper.PageInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,6 +128,6 @@ public class BaseController <C extends IService<?>>
      */
     public String redirect(String url)
     {
-        return StringUtils.format("redirect:{}", url);
+        return StringTools.format("redirect:{}", url);
     }
 }
