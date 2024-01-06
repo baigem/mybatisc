@@ -111,7 +111,7 @@ public class SearchFieldParser {
         this.field = field;
         this.annotation = searchField;
         this.type = field.getType();
-        this.name = StringUtils.hasText(searchField.value()) ? searchField.value() : field.getName();
+        this.name = this.mybatiscConfig.getNameConversion().conversionFieldName(field,StringUtils.hasText(searchField.value()) ? searchField.value() : field.getName());
         this.joinList = Arrays.stream(searchField.join())
                 .map(info -> new JoinParser(mybatiscConfig, this.mainTable,info))
                 .collect(Collectors.toList());

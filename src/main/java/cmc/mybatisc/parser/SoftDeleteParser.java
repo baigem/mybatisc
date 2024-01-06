@@ -3,6 +3,7 @@ package cmc.mybatisc.parser;
 import cmc.mybatisc.annotation.SoftDelete;
 import cmc.mybatisc.config.interfaces.TableEntity;
 import cmc.mybatisc.core.util.AliasOperation;
+import cmc.mybatisc.core.util.TableStructure;
 import lombok.Data;
 
 import java.lang.reflect.Method;
@@ -25,9 +26,7 @@ public class SoftDeleteParser {
      */
     private final AliasOperation aliasOperation = new AliasOperation();
 
-    private String table;
-
-    private String tableAlias;
+    private TableStructure table;
 
     private String removeSuffix;
 
@@ -40,8 +39,7 @@ public class SoftDeleteParser {
     private void parse(SoftDelete fieldDelete, Method method, MapperParser mapperParser) {
         this.mapperParser = mapperParser;
         if (fieldDelete.table() != TableEntity.class) {
-            EntityParser entityParser = new EntityParser(fieldDelete.table(),mapperParser.getNameConversion());
-            this.table = entityParser.getTableName();
+            this.table = TableStructure.getTableStructure(fieldDelete.table(), mapperParser.getTableStructure());
         }
         this.removeSuffix = fieldDelete.removeSuffix();
 //        this.exclude = fieldDelete.exclude();

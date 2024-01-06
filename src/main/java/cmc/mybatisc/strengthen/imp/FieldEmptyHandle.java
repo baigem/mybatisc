@@ -60,8 +60,8 @@ public class FieldEmptyHandle extends BaseStrengthen {
         DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
         FieldEmpty fieldEmpty = method.getAnnotation(FieldEmpty.class);
         Parameter[] parameters = method.getParameters();
-        String table = MapperStrongUtils.getTableName(this.mapperParser.getTableStructure().getTableName(), "");
-        String tableAlias = this.mapperParser.getTableStructure().getTableAlias();
+        String table = this.mapperParser.getTableStructure().getName();
+        String tableAlias = this.mapperParser.getTableStructure().getAlias();
         if (!StringUtils.hasText(table)) {
             throw new IllegalArgumentException("table name is not empty");
         }

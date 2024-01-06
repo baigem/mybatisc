@@ -3,6 +3,7 @@ package cmc.mybatisc.strengthen.imp;
 import cmc.mybatisc.annotation.Search;
 import cmc.mybatisc.config.DelFlagConfig;
 import cmc.mybatisc.config.MybatisScannerConfigurer;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.model.FieldSelectDataSource;
 import cmc.mybatisc.model.QueryFieldCriteria;
 import cmc.mybatisc.parser.JoinParser;
@@ -59,7 +60,7 @@ public class SearchHandle extends BaseStrengthen {
         DelFlagConfig delFlagConfig = MybatisScannerConfigurer.getBeanFactory().getBean(DelFlagConfig.class);
         SearchParser searchParser = new SearchParser(this.mybatiscConfig, method, this.mapperParser);
         // 表名
-        String table = searchParser.getTable();
+        TableStructure table = searchParser.getTableStructure();
         String fieldName = String.join(",", searchParser.getDisplayField());
 
         Class<?> returnType = method.getReturnType();
@@ -68,14 +69,16 @@ public class SearchHandle extends BaseStrengthen {
         }
 
         StringBuilder sql = new StringBuilder();
-        sql.append("<script> select ").append(fieldName).append(" from ").append(table).append(" ").append(searchParser.getTableAlias());
+        sql.append("<script> select ").append(fieldName).append(" from ").append(table.getName()).append(" ").append(table.getAlias());
         // 生成join
         for (JoinParser join : searchParser.getJoinParserList()) {
+            TableStructure joinTableStructure = join.getJoinTableStructure();
+            TableStructure onTableStructure = join.getOnTableStructure();
             sql.append(" ").append(join.getJoinType()).append(" join ")
-                    .append(join.getJoinTable()).append(" ")
-                    .append(join.getTableAlias()).append(" on ")
-                    .append(join.getTableAlias()).append(".").append(SqlUtils.packageField(join.getJoinField())).append(" = ")
-                    .append(join.getLinkTableAlias()).append(".").append(join.getOnField());
+                    .append(joinTableStructure.getName()).append(" ")
+                    .append(joinTableStructure.getAlias()).append(" on ")
+                    .append(joinTableStructure.getCompleteFieldName(join.getJoinField(),"")).append(" = ")
+                    .append(onTableStructure.getCompleteFieldName(join.getOnField(),""));
         }
         sql.append(" <where> ");
         for (JoinParser joinParser : searchParser.getJoinParserList()) {

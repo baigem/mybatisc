@@ -126,7 +126,7 @@ public class QueryFieldCriteria {
                         .tableName(table.getName())
                         .alias(table.getAlias())
                         .aliasOperation(searchParser.getMybatiscConfig().getAlias())
-                        .fieldName(searchParser.getNameMode().handler(fieldParser.getName()))
+                        .fieldName(fieldParser.getName())
                         .like(fieldParser.getLike())
                         .range(fieldParser.getRange())
                         .endName(searchParameterParser.getName() + "." + fieldParser.getField().getName() + fieldParser.getRangeEndSuffix())
