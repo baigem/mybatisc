@@ -73,7 +73,7 @@ public class FieldSelectHandle extends BaseStrengthen {
         if (returnType == Integer.class || returnType == Long.class || returnType == int.class || returnType == long.class) {
             fieldName = "count(*)";
         }
-        sql.append("<script> select ").append(fieldName).append(" from ").append(table).append(" as ").append(table.getAlias()).append(" <where> ");
+        sql.append("<script> select ").append(fieldName).append(" from ").append(table.getName()).append(" as ").append(table.getAlias()).append(" <where> ");
         // 添加逻辑删除
         sql.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getTableStructure(),"",""));
 

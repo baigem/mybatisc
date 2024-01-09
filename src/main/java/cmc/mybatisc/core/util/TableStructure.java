@@ -194,6 +194,9 @@ public class TableStructure {
      * @return {@link String}
      */
     public static String getTableName(Class<?> entity, String name) {
+        if(entity == TableEntity.class){
+            return "";
+        }
         MybatiscConfig config = MybatisScannerConfigurer.getBeanFactory().getBean(MybatiscConfig.class);
         TableName tableName = entity.getAnnotation(TableName.class);
         if (tableName != null && StringUtils.hasText(tableName.value())) {

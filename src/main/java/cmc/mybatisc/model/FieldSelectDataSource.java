@@ -1,5 +1,7 @@
 package cmc.mybatisc.model;
 
+import cmc.mybatisc.config.interfaces.TableEntity;
+import cmc.mybatisc.core.util.TableStructure;
 import cmc.mybatisc.utils.reflect.ReflectUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -70,7 +72,7 @@ public class FieldSelectDataSource {
             return CACHE.get(annotation);
         }
         // 进行反射获取注解中的值
-        String table = ReflectUtils.invokeGet(annotation, "table", "");
+        Class<?> table = ReflectUtils.invokeGet(annotation, "table", TableEntity.class);
         String field = ReflectUtils.invokeGet(annotation, "value", "");
         boolean isLike = ReflectUtils.invokeGet(annotation, "like", false);
         String removeSuffix = ReflectUtils.invokeGet(annotation, "removeSuffix", "");
@@ -79,7 +81,7 @@ public class FieldSelectDataSource {
         boolean first = ReflectUtils.invokeGet(annotation, "first", false);
         boolean allowNull = ReflectUtils.invokeGet(annotation, "allowNull", false);
         return FieldSelectDataSource.builder()
-                .table(table)
+                .table(TableStructure.getTableName(table,""))
                 .field(field)
                 .like(isLike)
                 .removeSuffix(removeSuffix)
