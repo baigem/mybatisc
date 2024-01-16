@@ -252,10 +252,21 @@ public class TableStructure {
      * @return {@link String}
      */
     public String getCompleteFieldName(String fieldName, String removeSuffix) {
+        return SqlUtils.packageField(this.alias+"."+this.getFieldName(fieldName,removeSuffix));
+    }
+
+    /**
+     * 获取字段名
+     *
+     * @param fieldName    字段名称
+     * @param removeSuffix 删除后缀
+     * @return {@link String}
+     */
+    public String getFieldName(String fieldName, String removeSuffix) {
         if (removeSuffix != null) {
             fieldName = fieldName.replaceAll(removeSuffix + "$", "");
         }
         fieldName = mybatiscConfig.getNameConversion().conversionFieldName(null,fieldName);
-        return SqlUtils.packageField(this.alias+"."+fieldName);
+        return SqlUtils.packageField(fieldName);
     }
 }

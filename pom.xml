@@ -4,7 +4,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>cmc</groupId>
     <artifactId>mybatisc</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+<!--    <version>0.0.1-SNAPSHOT</version>-->
+    <version>0.0.1</version>
     <name>MyBatisC</name>
     <description>MyBatisC是一个基于mybatis plus进行增强的库，其也整合了一些好用的工具类</description>
     <properties>

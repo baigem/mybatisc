@@ -69,7 +69,7 @@ public class SoftDeleteHandle extends BaseStrengthen {
         stringBuilder.append(delFlagConfig.generateSelectSql(dy,super.mapperParser.getTableStructure(),"","and "));
         for (Parameter parameter : method.getParameters()) {
             ParamAnnotation generate = ParamAnnotation.generate(parameter);
-            String fieldName = table.getCompleteFieldName(generate.value, softDelete.removeSuffix());
+            String fieldName = table.getFieldName(generate.value, softDelete.removeSuffix());
             // 判断是否是列表
             if (MapperStrongUtils.isListTypeClass(parameter.getType())) {
                 stringBuilder.append(fieldName).append(" in <foreach item='item' collection='").append(generate.value).append("' open='(' separator=',' close=')'>#{item}</foreach> ").append(generate.oan.getValue()).append(" ");
